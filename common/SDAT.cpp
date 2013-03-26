@@ -1,13 +1,14 @@
 /*
  * SDAT - SDAT structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2013-03-26
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
  */
 
 #include <functional>
+#include <iostream>
 #include "SDAT.h"
 
 SDAT::SDAT() : filename(""), header(), SYMBOffset(0), SYMBSize(0), INFOOffset(0), INFOSize(0), FATOffset(0), FATSize(0), FILEOffset(0), FILESize(0), symbSection(),
@@ -289,11 +290,43 @@ static inline uint16_t GetNonDupNumber(uint16_t orig, const Duplicates &duplicat
 	return orig;
 }
 
+// Output a vector with comma separation
+template<typename T, typename U> static inline void OutputVector(const std::vector<T> &vec, const std::vector<U> &nameSource, const std::string &outputPrefix = " ",
+	size_t columnWidth = 80)
+{
+	std::string output = outputPrefix;
+	for (size_t i = 0, count = vec.size(); i < count; ++i)
+	{
+		std::string keep = nameSource[vec[i]].origFilename;
+		if (output.size() + keep.size() > columnWidth)
+		{
+			std::cout << output << "\n";
+			output = "   ";
+		}
+		output += " " + keep + ",";
+	}
+	if (!output.empty())
+	{
+		output.erase(output.end() - 1);
+		std::cout << output << "\n";
+	}
+}
+
+// Output a map with the vector being comma separation
+template<typename T, typename U, typename V> static inline void OutputMap(const std::map<T, U> &map, const std::vector<V> &nameSource, size_t columnWidth = 80)
+{
+	for (auto curr = map.begin(), end = map.end(); curr != end; ++curr)
+	{
+		std::string output = "  " + nameSource[curr->first].origFilename + ":";
+		OutputVector(curr->second, nameSource, output, columnWidth);
+	}
+}
+
 // Strips data out of an SDAT.  This consists of removing duplicate SSEQs, SBNKs, and SWARs,
 // as well as the gaps in some SDATs (namely when the SYMB/INFO sections have no offsets
 // for items, which can be quite a waste if there are a lot of these gaps).  It also completely
 // removes anything that is not an SSEQ, SBNK, or SWAR.
-void SDAT::Strip(const IncOrExc &includesAndExcludes, bool removedExcluded)
+void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removedExcluded)
 {
 	// Search for duplicate SWARs
 	Duplicates duplicateSWARs;
@@ -375,9 +408,11 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool removedExcluded)
 	Duplicates duplicateSSEQs;
 	std::vector<uint32_t> excludedSSEQs;
 
-	for (size_t i = 0, entries = this->infoSection.SEQrecord.entries.size(); i < entries; ++i)
+	for (int i = 0, entries = this->infoSection.SEQrecord.entries.size(); i < entries; ++i)
 	{
 		if (!this->infoSection.SEQrecord.entryOffsets[i]) // Skip empty offsets
+			continue;
+		if (std::find(excludedSSEQs.begin(), excludedSSEQs.end(), i) != excludedSSEQs.end()) // Skip already excluded files
 			continue;
 		uint16_t ifileID = this->infoSection.SEQrecord.entries[i].fileID;
 		std::string ifilename = this->infoSection.SEQrecord.entries[i].sseq->origFilename;
@@ -385,14 +420,18 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool removedExcluded)
 		if (IncludeFilename(ifilename, this->infoSection.SEQrecord.entries[i].sdatNumber, includesAndExcludes) == KEEP_EXCLUDE)
 		{
 			excludedSSEQs.push_back(i);
-			if (alreadyFound != duplicateSSEQs.end())
+			// If the item to exclude is a key for duplicate SSEQs, then we need to erase it
+			// from the map and restart checking
+			if (duplicateSSEQs.count(i))
+			{
+				duplicateSSEQs.erase(i);
+				i = -1;
+			}
+			// Otherwise, if the item was a duplicate of another, remove it from that set of duplicates
+			else if (alreadyFound != duplicateSSEQs.end())
 			{
 				auto duplicates = alreadyFound->second;
 				duplicates.erase(std::find(duplicates.begin(), duplicates.end(), i));
-				duplicates.push_back(alreadyFound->first);
-				std::sort(duplicates.begin(), duplicates.end());
-				duplicateSSEQs.erase(alreadyFound);
-				duplicateSSEQs.insert(std::make_pair(i, duplicates));
 			}
 			continue;
 		}
@@ -403,7 +442,7 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool removedExcluded)
 		uint16_t inonDupBank = GetNonDupNumber(this->infoSection.SEQrecord.entries[i].bank, duplicateSBNKs);
 		const auto &ifileData = this->infoSection.SEQrecord.entries[i].fileData;
 		std::vector<uint32_t> duplicates;
-		for (size_t j = i + 1; j < entries; ++j)
+		for (int j = i + 1; j < entries; ++j)
 		{
 			if (!this->infoSection.SEQrecord.entryOffsets[j]) // Skip empty offsets
 				continue;
@@ -468,6 +507,38 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool removedExcluded)
 
 	// Sort the list of SWARs to keep
 	std::sort(SWARsToKeep.begin(), SWARsToKeep.end());
+
+	// If verbosity is turned on, output which files will be kept and which are being removed as duplicates
+	if (verbose)
+	{
+		if (!excludedSSEQs.empty())
+		{
+			std::cout << "The following SSEQ" << (excludedSSEQs.size() == 1 ? "" : "s") << " were excluded by request:\n";
+			OutputVector(excludedSSEQs, this->infoSection.SEQrecord.entries);
+			std::cout << "\n";
+		}
+
+		if (!duplicateSSEQs.empty())
+		{
+			std::cout << "The following SSEQ" << (duplicateSSEQs.size() != 1 ? "s" : "") << " had duplicates, the duplicates will be removed:\n";
+			OutputMap(duplicateSSEQs, this->infoSection.SEQrecord.entries);
+			std::cout << "\n";
+		}
+
+		if (!duplicateSBNKs.empty())
+		{
+			std::cout << "The following SBNK" << (duplicateSBNKs.size() != 1 ? "s" : "") << " had duplicates, the duplicates will be removed:\n";
+			OutputMap(duplicateSBNKs, this->infoSection.BANKrecord.entries);
+			std::cout << "\n";
+		}
+
+		if (!duplicateSWARs.empty())
+		{
+			std::cout << "The following SWAR" << (duplicateSWARs.size() != 1 ? "s" : "") << " had duplicates, the duplicates will be removed:\n";
+			OutputMap(duplicateSWARs, this->infoSection.WAVEARCrecord.entries);
+			std::cout << "\n";
+		}
+	}
 
 	// Figure out where the remaining SBNKs will be once moved
 	std::map<uint32_t, uint32_t> SBNKMove;

@@ -1,17 +1,20 @@
 /*
  * NDS to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2013-03-26
  *
  * Version history:
- *   v1.0 - Initial version
+ *   v1.0 - 2013-03-25 - Initial version
+ *   v1.1 - 2013-03-26 - Merged SDAT Strip's verbosity into the SDAT class'
+ *                       Strip function.
+ *                     - Modified how excluded SSEQs are handled when stripping.
  */
 
 #include <iostream>
 #include "NCSF.h"
 #include "optionparser.h"
 
-static const std::string NDSTONCSF_VERSION = "1.0";
+static const std::string NDSTONCSF_VERSION = "1.1";
 
 static inline option::ArgStatus RequireArgument(const option::Option &opt, bool msg)
 {
@@ -242,7 +245,7 @@ int main(int argc, char *argv[])
 				if (keep == KEEP_NEITHER && !oldSDATFiles.empty() && std::find(oldSDATFiles.begin(), oldSDATFiles.end(), fullFilename) == oldSDATFiles.end())
 					tempIncludesAndExcludes.push_back(KeepInfo(fullFilename, KEEP_EXCLUDE));
 			}
-		finalSDAT.Strip(tempIncludesAndExcludes, false);
+		finalSDAT.Strip(tempIncludesAndExcludes, options[VERBOSE].count() > 1, false);
 
 		// Output which files are included/excluded, asking if -a was not given
 		for (size_t i = 0; i < finalSDAT.infoSection.SEQrecord.count; ++i)
@@ -293,7 +296,7 @@ int main(int argc, char *argv[])
 		}
 
 		// Post-exclude/input removal
-		finalSDAT.Strip(includesAndExcludes);
+		finalSDAT.Strip(includesAndExcludes, options[VERBOSE].count() > 1);
 
 		// Create vector data for SDAT
 		PseudoWrite sdatData;

@@ -1,7 +1,7 @@
 /*
  * SDAT - SDAT structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2013-03-26
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
@@ -49,7 +49,7 @@ struct SDAT
 	~SDAT();
 
 	SDAT &operator+=(const SDAT &other);
-	void Strip(const IncOrExc &includesAndExcludes, bool removeExcluded = true);
+	void Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removeExcluded = true);
 private:
 	SDAT(const SDAT &);
 	SDAT &operator=(const SDAT &);
