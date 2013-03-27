@@ -236,9 +236,8 @@ int main(int argc, char *argv[])
 				if (!finalSDAT.infoSection.SEQrecord.entryOffsets[i]) // Skip empty offsets
 					continue;
 
-				std::string filename = finalSDAT.infoSection.SEQrecord.entries[i].sseq->origFilename, fullFilename = filename;
-				if (sdatNumber > 1)
-					fullFilename = finalSDAT.infoSection.SEQrecord.entries[i].sdatNumber + "/" + fullFilename;
+				std::string filename = finalSDAT.infoSection.SEQrecord.entries[i].sseq->origFilename,
+					fullFilename = finalSDAT.infoSection.SEQrecord.entries[i].FullFilename(sdatNumber > 1);
 
 				KeepType keep = IncludeFilename(filename, finalSDAT.infoSection.SEQrecord.entries[i].sdatNumber, includesAndExcludes);
 
@@ -253,12 +252,10 @@ int main(int argc, char *argv[])
 			if (!finalSDAT.infoSection.SEQrecord.entryOffsets[i]) // Skip empty offsets
 				continue;
 
-			std::string filename = finalSDAT.infoSection.SEQrecord.entries[i].sseq->origFilename, fullFilename = filename, verboseFilename = filename;
+			std::string filename = finalSDAT.infoSection.SEQrecord.entries[i].sseq->origFilename,
+				fullFilename = finalSDAT.infoSection.SEQrecord.entries[i].FullFilename(sdatNumber > 1), verboseFilename = filename;
 			if (sdatNumber > 1)
-			{
-				fullFilename = finalSDAT.infoSection.SEQrecord.entries[i].sdatNumber + "/" + fullFilename;
 				verboseFilename += " (from SDAT #" + finalSDAT.infoSection.SEQrecord.entries[i].sdatNumber + ")";
-			}
 
 			KeepType keep = IncludeFilename(filename, finalSDAT.infoSection.SEQrecord.entries[i].sdatNumber, includesAndExcludes);
 
@@ -364,9 +361,7 @@ int main(int argc, char *argv[])
 				auto reservedData = IntToLEVector<uint32_t>(i);
 
 				TagList thisTags = tags;
-				std::string fullFilename = finalSDAT.infoSection.SEQrecord.entries[i].sseq->origFilename;
-				if (sdatNumber > 1)
-					fullFilename = finalSDAT.infoSection.SEQrecord.entries[i].sdatNumber + "/" + fullFilename;
+				std::string fullFilename = finalSDAT.infoSection.SEQrecord.entries[i].FullFilename(sdatNumber > 1);
 
 				// If we had saved tags from a previous run and the nocopy option isn't being used,
 				// copy the old tags before creating the file (NOTE: we also have to redo setting

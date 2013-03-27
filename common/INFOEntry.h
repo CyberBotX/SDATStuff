@@ -20,6 +20,7 @@ struct INFOEntry
 {
 	std::vector<uint8_t> fileData;
 	std::string origFilename;
+	std::string sdatNumber;
 
 	INFOEntry();
 	INFOEntry(const INFOEntry &entry);
@@ -32,6 +33,8 @@ struct INFOEntry
 	virtual void Read(PseudoReadFile &file) = 0;
 	virtual uint32_t Size() const = 0;
 	virtual void Write(PseudoWrite &file) const = 0;
+
+	std::string FullFilename(bool multipleSDATs) const;
 };
 
 struct INFOEntrySEQ : INFOEntry
@@ -45,7 +48,6 @@ struct INFOEntrySEQ : INFOEntry
 	uint8_t ply;
 	uint8_t unknown2[2];
 	const SSEQ *sseq;
-	std::string sdatNumber;
 
 	INFOEntrySEQ();
 	INFOEntrySEQ(const INFOEntrySEQ &entry);

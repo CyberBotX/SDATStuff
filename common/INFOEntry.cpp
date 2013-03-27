@@ -9,11 +9,11 @@
 
 #include "INFOEntry.h"
 
-INFOEntry::INFOEntry() : fileData(), origFilename("")
+INFOEntry::INFOEntry() : fileData(), origFilename(""), sdatNumber("")
 {
 }
 
-INFOEntry::INFOEntry(const INFOEntry& entry) : fileData(entry.fileData), origFilename(entry.origFilename)
+INFOEntry::INFOEntry(const INFOEntry& entry) : fileData(entry.fileData), origFilename(entry.origFilename), sdatNumber(entry.sdatNumber)
 {
 }
 
@@ -23,17 +23,26 @@ INFOEntry &INFOEntry::operator=(const INFOEntry &entry)
 	{
 		this->fileData = entry.fileData;
 		this->origFilename = entry.origFilename;
+		this->sdatNumber = entry.sdatNumber;
 	}
 	return *this;
 }
 
-INFOEntrySEQ::INFOEntrySEQ() : INFOEntry(), fileID(0), unknown(0), bank(0), vol(0), cpr(0), ppr(0), ply(0), sseq(NULL), sdatNumber("")
+std::string INFOEntry::FullFilename(bool multipleSDATs) const
+{
+	std::string filename = this->origFilename;
+	if (multipleSDATs)
+		filename = this->sdatNumber + "/" + filename;
+	return filename;
+}
+
+INFOEntrySEQ::INFOEntrySEQ() : INFOEntry(), fileID(0), unknown(0), bank(0), vol(0), cpr(0), ppr(0), ply(0), sseq(NULL)
 {
 	memset(this->unknown2, 0, sizeof(this->unknown2));
 }
 
 INFOEntrySEQ::INFOEntrySEQ(const INFOEntrySEQ &entry) : INFOEntry(entry), fileID(entry.fileID), unknown(entry.unknown), bank(entry.bank), vol(entry.vol), cpr(entry.cpr),
-	ppr(entry.ppr), ply(entry.ply), sseq(entry.sseq), sdatNumber(entry.sdatNumber)
+	ppr(entry.ppr), ply(entry.ply), sseq(entry.sseq)
 {
 	memcpy(this->unknown2, entry.unknown2, sizeof(this->unknown2));
 }
@@ -52,7 +61,6 @@ INFOEntrySEQ &INFOEntrySEQ::operator=(const INFOEntrySEQ &entry)
 		this->ply = entry.ply;
 		memcpy(this->unknown2, entry.unknown2, sizeof(this->unknown2));
 		this->sseq = entry.sseq;
-		this->sdatNumber = entry.sdatNumber;
 	}
 	return *this;
 }

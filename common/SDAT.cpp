@@ -82,6 +82,7 @@ void SDAT::Read(const std::string &fn, PseudoReadFile &file)
 		if (this->SYMBOffset)
 			origName = this->symbSection.BANKrecord.entries[i];
 		this->infoSection.BANKrecord.entries[i].origFilename = origName;
+		this->infoSection.BANKrecord.entries[i].sdatNumber = this->filename;
 		file.pos = this->fatSection.records[fileID].offset;
 		this->infoSection.BANKrecord.entries[i].fileData.resize(this->fatSection.records[fileID].size, 0);
 		file.ReadLE(this->infoSection.BANKrecord.entries[i].fileData);
@@ -101,6 +102,7 @@ void SDAT::Read(const std::string &fn, PseudoReadFile &file)
 		if (this->SYMBOffset)
 			origName = this->symbSection.WAVEARCrecord.entries[i];
 		this->infoSection.WAVEARCrecord.entries[i].origFilename = origName;
+		this->infoSection.WAVEARCrecord.entries[i].sdatNumber = this->filename;
 		file.pos = this->fatSection.records[fileID].offset;
 		this->infoSection.WAVEARCrecord.entries[i].fileData.resize(this->fatSection.records[fileID].size, 0);
 		file.ReadLE(this->infoSection.WAVEARCrecord.entries[i].fileData);
@@ -291,13 +293,13 @@ static inline uint16_t GetNonDupNumber(uint16_t orig, const Duplicates &duplicat
 }
 
 // Output a vector with comma separation
-template<typename T, typename U> static inline void OutputVector(const std::vector<T> &vec, const std::vector<U> &nameSource, const std::string &outputPrefix = " ",
-	size_t columnWidth = 80)
+template<typename T, typename U> static inline void OutputVector(const std::vector<T> &vec, const std::vector<U> &nameSource, bool multipleSDATs,
+	const std::string &outputPrefix = " ", size_t columnWidth = 80)
 {
 	std::string output = outputPrefix;
 	for (size_t i = 0, count = vec.size(); i < count; ++i)
 	{
-		std::string keep = nameSource[vec[i]].origFilename;
+		std::string keep = nameSource[vec[i]].FullFilename(multipleSDATs);
 		if (output.size() + keep.size() > columnWidth)
 		{
 			std::cout << output << "\n";
@@ -313,12 +315,13 @@ template<typename T, typename U> static inline void OutputVector(const std::vect
 }
 
 // Output a map with the vector being comma separation
-template<typename T, typename U, typename V> static inline void OutputMap(const std::map<T, U> &map, const std::vector<V> &nameSource, size_t columnWidth = 80)
+template<typename T, typename U, typename V> static inline void OutputMap(const std::map<T, U> &map, const std::vector<V> &nameSource, bool multipleSDATs,
+	size_t columnWidth = 80)
 {
 	for (auto curr = map.begin(), end = map.end(); curr != end; ++curr)
 	{
-		std::string output = "  " + nameSource[curr->first].origFilename + ":";
-		OutputVector(curr->second, nameSource, output, columnWidth);
+		std::string output = "  " + nameSource[curr->first].FullFilename(multipleSDATs) + ":";
+		OutputVector(curr->second, nameSource, multipleSDATs, output, columnWidth);
 	}
 }
 
@@ -420,15 +423,7 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 		if (IncludeFilename(ifilename, this->infoSection.SEQrecord.entries[i].sdatNumber, includesAndExcludes) == KEEP_EXCLUDE)
 		{
 			excludedSSEQs.push_back(i);
-			// If the item to exclude is a key for duplicate SSEQs, then we need to erase it
-			// from the map and restart checking
-			if (duplicateSSEQs.count(i))
-			{
-				duplicateSSEQs.erase(i);
-				i = -1;
-			}
-			// Otherwise, if the item was a duplicate of another, remove it from that set of duplicates
-			else if (alreadyFound != duplicateSSEQs.end())
+			if (alreadyFound != duplicateSSEQs.end())
 			{
 				auto duplicates = alreadyFound->second;
 				duplicates.erase(std::find(duplicates.begin(), duplicates.end(), i));
@@ -514,28 +509,28 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 		if (!excludedSSEQs.empty())
 		{
 			std::cout << "The following SSEQ" << (excludedSSEQs.size() == 1 ? "" : "s") << " were excluded by request:\n";
-			OutputVector(excludedSSEQs, this->infoSection.SEQrecord.entries);
+			OutputVector(excludedSSEQs, this->infoSection.SEQrecord.entries, this->count > 1);
 			std::cout << "\n";
 		}
 
 		if (!duplicateSSEQs.empty())
 		{
 			std::cout << "The following SSEQ" << (duplicateSSEQs.size() != 1 ? "s" : "") << " had duplicates, the duplicates will be removed:\n";
-			OutputMap(duplicateSSEQs, this->infoSection.SEQrecord.entries);
+			OutputMap(duplicateSSEQs, this->infoSection.SEQrecord.entries, this->count > 1);
 			std::cout << "\n";
 		}
 
 		if (!duplicateSBNKs.empty())
 		{
 			std::cout << "The following SBNK" << (duplicateSBNKs.size() != 1 ? "s" : "") << " had duplicates, the duplicates will be removed:\n";
-			OutputMap(duplicateSBNKs, this->infoSection.BANKrecord.entries);
+			OutputMap(duplicateSBNKs, this->infoSection.BANKrecord.entries, this->count > 1);
 			std::cout << "\n";
 		}
 
 		if (!duplicateSWARs.empty())
 		{
 			std::cout << "The following SWAR" << (duplicateSWARs.size() != 1 ? "s" : "") << " had duplicates, the duplicates will be removed:\n";
-			OutputMap(duplicateSWARs, this->infoSection.WAVEARCrecord.entries);
+			OutputMap(duplicateSWARs, this->infoSection.WAVEARCrecord.entries, this->count > 1);
 			std::cout << "\n";
 		}
 	}
