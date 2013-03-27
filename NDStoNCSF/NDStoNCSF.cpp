@@ -241,7 +241,9 @@ int main(int argc, char *argv[])
 					{
 						auto range = oldSDATFiles.equal_range(filename);
 						const auto &thisData = finalSDAT.infoSection.SEQrecord.entries[i].sseq->data;
-						for (auto curr = range.first, end = range.second; curr != end; ++curr)
+						auto curr = range.first;
+						auto end = range.second;
+						for (; curr != end; ++curr)
 						{
 							const auto &currData = curr->second.data;
 							if (thisData == currData)
