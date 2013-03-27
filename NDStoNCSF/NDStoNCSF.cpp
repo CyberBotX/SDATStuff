@@ -8,6 +8,7 @@
  *   v1.1 - 2013-03-26 - Merged SDAT Strip's verbosity into the SDAT class'
  *                       Strip function.
  *                     - Modified how excluded SSEQs are handled when stripping.
+ *                     - Corrected handling of files within an existing SDAT.
  */
 
 #include <iostream>
@@ -35,7 +36,6 @@ const option::Descriptor opts[] =
 		"Usage:\n"
 		"  NDStoNCSF [options] <Input SDAT filename>\n\n"
 		"Options:"),
-	//option::Descriptor(UNKNOWN, 0, "", "", option::Arg::None, std::string("NDS").c_str()),
 	option::Descriptor(HELP, 0, "h", "help", option::Arg::None, "  --help,-h \tPrint usage and exit."),
 	option::Descriptor(VERBOSE, 0, "v", "verbose", option::Arg::None, "  --verbose,-v \tVerbose output."),
 	option::Descriptor(TIME, 0, "t", "time", option::Arg::None, "  --time,-t \tCalculate time on each track."),
@@ -116,14 +116,13 @@ int main(int argc, char *argv[])
 
 		std::map<std::string, TagList> savedTags;
 		std::map<std::string, std::string> filenames;
-		Files oldSDATFiles;
+		std::multimap<std::string, SSEQ> oldSDATFiles;
 		if (DirExists(dirName))
 		{
 			Files files = GetFilesInNCSFDirectory(dirName);
 
 			if (!options[NOCOPY])
 			{
-				uint16_t sdatCount = 0;
 				for (auto curr = files.begin(), end = files.end(); curr != end; ++curr)
 				{
 					try
@@ -146,10 +145,9 @@ int main(int argc, char *argv[])
 
 							SDAT sdat;
 							sdat.Read(*curr, sdatFileData);
-							sdatCount = sdat.count;
 							if (sdat.SYMBOffset)
 								for (uint32_t i = 0; i < sdat.symbSection.SEQrecord.count; ++i)
-									oldSDATFiles.push_back(sdat.symbSection.SEQrecord.entries[i]);
+									oldSDATFiles.insert(std::make_pair(sdat.symbSection.SEQrecord.entries[i], *sdat.infoSection.SEQrecord.entries[i].sseq));
 						}
 						if (curr->rfind(".ncsf") != std::string::npos || curr->rfind(".minincsf") != std::string::npos)
 						{
@@ -157,8 +155,11 @@ int main(int argc, char *argv[])
 							TagList tags = GetTagsFromNCSF(ncsfFileData);
 							if (tags.Exists("origFilename"))
 							{
-								savedTags[tags["origFilename"]] = tags;
-								filenames[tags["origFilename"]] = filename;
+								std::string fullOrigFilename = tags["origFilename"];
+								if (tags.Exists("origSDAT"))
+									fullOrigFilename = tags["origSDAT"] + "/" + fullOrigFilename;
+								savedTags[fullOrigFilename] = tags;
+								filenames[fullOrigFilename] = filename;
 							}
 							else
 								savedTags[filename] = tags;
@@ -168,16 +169,6 @@ int main(int argc, char *argv[])
 					{
 					}
 				}
-				if (sdatCount > 1)
-					for (auto curr = oldSDATFiles.begin(), end = oldSDATFiles.end(); curr != end; ++curr)
-					{
-						if (!savedTags.count(*curr))
-							continue;
-						const TagList &tags = savedTags[*curr];
-						if (!tags.Exists("origSDAT"))
-							continue;
-						*curr = tags["origSDAT"] + "/" + *curr;
-					}
 			}
 
 			RemoveFiles(files);
@@ -230,6 +221,7 @@ int main(int argc, char *argv[])
 
 		// Pre-exclude/include removal
 		IncOrExc tempIncludesAndExcludes = includesAndExcludes;
+		Files oldSDATFilesList;
 		if (!options[NOCOPY])
 			for (size_t i = 0; i < finalSDAT.infoSection.SEQrecord.count; ++i)
 			{
@@ -241,8 +233,29 @@ int main(int argc, char *argv[])
 
 				KeepType keep = IncludeFilename(filename, finalSDAT.infoSection.SEQrecord.entries[i].sdatNumber, includesAndExcludes);
 
-				if (keep == KEEP_NEITHER && !oldSDATFiles.empty() && std::find(oldSDATFiles.begin(), oldSDATFiles.end(), fullFilename) == oldSDATFiles.end())
-					tempIncludesAndExcludes.push_back(KeepInfo(fullFilename, KEEP_EXCLUDE));
+				if (keep == KEEP_NEITHER)
+				{
+					size_t count = oldSDATFiles.count(filename);
+					bool exclude = true;
+					if (count > 0)
+					{
+						auto range = oldSDATFiles.equal_range(filename);
+						const auto &thisData = finalSDAT.infoSection.SEQrecord.entries[i].sseq->data;
+						for (auto curr = range.first, end = range.second; curr != end; ++curr)
+						{
+							const auto &currData = curr->second.data;
+							if (thisData == currData)
+							{
+								exclude = false;
+								break;
+							}
+						}
+					}
+					if (exclude)
+						tempIncludesAndExcludes.push_back(KeepInfo(fullFilename, KEEP_EXCLUDE));
+					else
+						oldSDATFilesList.push_back(fullFilename);
+				}
 			}
 		finalSDAT.Strip(tempIncludesAndExcludes, options[VERBOSE].count() > 1, false);
 
@@ -265,7 +278,8 @@ int main(int argc, char *argv[])
 				std::cout << verboseFilename << " was included on the command line.\n";
 			else
 			{
-				bool defaultToKeep = options[NOCOPY] || oldSDATFiles.empty() || std::find(oldSDATFiles.begin(), oldSDATFiles.end(), fullFilename) != oldSDATFiles.end();
+				bool defaultToKeep = options[NOCOPY] || oldSDATFiles.empty() ||
+					std::find(oldSDATFilesList.begin(), oldSDATFilesList.end(), fullFilename) != oldSDATFilesList.end();
 				if (options[AUTO])
 				{
 					if (defaultToKeep)
@@ -379,8 +393,8 @@ int main(int argc, char *argv[])
 
 				// If this file was renamed from the generated name, then use the new filename instead
 				// (This will only work if there was a SYMB section in the SDAT)
-				if (filenames.count(thisTags["origFilename"]))
-					minincsfFilename = filenames[thisTags["origFilename"]];
+				if (filenames.count(fullFilename))
+					minincsfFilename = filenames[fullFilename];
 
 				if (options[TIME])
 					GetTime(minincsfFilename, &finalSDAT, finalSDAT.infoSection.SEQrecord.entries[i].sseq, thisTags, !!options[VERBOSE]);
