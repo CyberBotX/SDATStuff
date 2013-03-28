@@ -1,7 +1,7 @@
 /*
  * NDS to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-26
+ * Last modification on 2013-03-28
  *
  * Version history:
  *   v1.0 - 2013-03-25 - Initial version
@@ -9,23 +9,12 @@
  *                       Strip function.
  *                     - Modified how excluded SSEQs are handled when stripping.
  *                     - Corrected handling of files within an existing SDAT.
+ *   v1.2 - 2013-03-28 - Made timing to be on by default, with 2 loops.
  */
 
-#include <iostream>
 #include "NCSF.h"
-#include "optionparser.h"
 
-static const std::string NDSTONCSF_VERSION = "1.1";
-
-static inline option::ArgStatus RequireArgument(const option::Option &opt, bool msg)
-{
-	if (opt.arg && *opt.arg)
-		return option::ARG_OK;
-
-	if (msg)
-		std::cerr << "Option '" << std::string(opt.name).substr(0, opt.namelen) << "' requires a non-empty argument.\n";
-	return option::ARG_ILLEGAL;
-}
+static const std::string NDSTONCSF_VERSION = "1.2";
 
 enum { UNKNOWN, HELP, VERBOSE, TIME, EXCLUDE, INCLUDE, AUTO, NOCOPY };
 const option::Descriptor opts[] =
@@ -38,7 +27,8 @@ const option::Descriptor opts[] =
 		"Options:"),
 	option::Descriptor(HELP, 0, "h", "help", option::Arg::None, "  --help,-h \tPrint usage and exit."),
 	option::Descriptor(VERBOSE, 0, "v", "verbose", option::Arg::None, "  --verbose,-v \tVerbose output."),
-	option::Descriptor(TIME, 0, "t", "time", option::Arg::None, "  --time,-t \tCalculate time on each track."),
+	option::Descriptor(TIME, 0, "t", "time", RequireNumericArgument,
+		"  --time,-t \tCalculate time on each track to the number of loops given.  Defaults to 2 loops.  0 will disable timing."),
 	option::Descriptor(EXCLUDE, 0, "x", "exclude", RequireArgument,
 		"  --exclude=<filename> \v         -x <filename> \tExclude the given filename from the final SDAT.  May use * and ? wildcards."),
 	option::Descriptor(INCLUDE, 0, "i", "include", RequireArgument,
@@ -46,13 +36,13 @@ const option::Descriptor opts[] =
 	option::Descriptor(AUTO, 0, "a", "auto", option::Arg::None, "  --auto,-a \tFully automatic mode (disables interactive mode)."),
 	option::Descriptor(NOCOPY, 0, "n", "nocopy", option::Arg::None, "  --nocopy,-n \tDo not check for previous files in the destination directory."),
 	option::Descriptor(UNKNOWN, 0, "", "", option::Arg::None,
-		"\nVerbose output will output the NCSFs created."
+		"\nVerbose output will output the NCSFs created.  If given more than once, verbose output will also output duplicates found during the SDAT stripping step."
 		"\n\nExcluded and included files will be processed in the order they are given on the command line, later arguments overriding earlier arguments.  If there is more "
 			"than 1 SDAT contained within the NDS ROM, you can exclude or include based on the SDAT by prefixing the filename with the SDAT number (1-based) and a forward "
 			"slash.  For example, if the NDS ROM has 2 SDATs and both contain a file called XYZ, but you only want XYZ from the 2nd SDAT, use 1/XYZ as an exclude.  Wildcards "
 			"before the forward slash are also accepted."
 		"\n\nIf --auto or -a are not given, the program will run in interactive mode, asking to confirm which sequences to keep.  (NOTE: Even in interactive mode, files "
-			"which were excluded or includes on the command line will still be automatically set as such.)"
+			"which were excluded or included on the command line will still be automatically set as such.)"
 		"\n\nIf --nocopy or -n are not given, the program will use information from a previous run of NDS to NCSF, if any exists.  This will set files that were not in the "
 			"previous run's SDAT as being excluded by default and it will also attempt to copy tags from the previous files.  (NOTE: This may not work if the original "
 			"SDAT did not contain a symbol record, mainly because filename matching cannot be done.)"
@@ -88,6 +78,10 @@ int main(int argc, char *argv[])
 		else if (opt.index() == INCLUDE)
 			includesAndExcludes.push_back(KeepInfo(opt.arg, KEEP_INCLUDE));
 	}
+
+	uint32_t numberOfLoops = 2;
+	if (options[TIME])
+		numberOfLoops = convertTo<uint32_t>(options[TIME].arg);
 
 	try
 	{
@@ -330,8 +324,8 @@ int main(int argc, char *argv[])
 			std::string ncsfFilename = finalSDAT.infoSection.SEQrecord.entries[0].sseq->filename + ".ncsf";
 			auto reservedData = IntToLEVector<uint32_t>(0);
 
-			if (options[TIME])
-				GetTime(ncsfFilename, &finalSDAT, finalSDAT.infoSection.SEQrecord.entries[0].sseq, tags, !!options[VERBOSE]);
+			if (numberOfLoops)
+				GetTime(ncsfFilename, &finalSDAT, finalSDAT.infoSection.SEQrecord.entries[0].sseq, tags, !!options[VERBOSE], numberOfLoops);
 
 			MakeNCSF(dirName + "/" + ncsfFilename, reservedData, sdatData.vector->data, tags.GetTags());
 			if (options[VERBOSE])
@@ -398,8 +392,8 @@ int main(int argc, char *argv[])
 				if (filenames.count(fullFilename))
 					minincsfFilename = filenames[fullFilename];
 
-				if (options[TIME])
-					GetTime(minincsfFilename, &finalSDAT, finalSDAT.infoSection.SEQrecord.entries[i].sseq, thisTags, !!options[VERBOSE]);
+				if (numberOfLoops)
+					GetTime(minincsfFilename, &finalSDAT, finalSDAT.infoSection.SEQrecord.entries[i].sseq, thisTags, !!options[VERBOSE], numberOfLoops);
 
 				MakeNCSF(dirName + "/" + minincsfFilename, reservedData, std::vector<uint8_t>(), thisTags.GetTags());
 				if (options[VERBOSE])

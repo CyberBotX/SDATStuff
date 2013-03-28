@@ -1,7 +1,7 @@
 /*
  * Common NCSF functions
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2013-03-28
  */
 
 #include <fstream>
@@ -260,9 +260,9 @@ void RemoveFiles(const Files &files)
 }
 
 // Get time on SSEQ (uses a separate thread so it can be killed off if it takes longer than a few seconds)
-static Time GetTime(TimerPlayer *player, uint32_t loopCount)
+static Time GetTime(TimerPlayer *player, uint32_t loopCount, uint32_t numberOfLoops)
 {
-	player->loops = 2;
+	player->loops = numberOfLoops;
 	player->StartLengthThread();
 	uint32_t i = 0;
 	for (; i < loopCount; ++i)
@@ -305,13 +305,13 @@ static Time GetTime(TimerPlayer *player, uint32_t loopCount)
 // music), if the song is one-shot (and not looping), it will run the player
 // a second time, "playing" the song to determine when silence has occurred.
 // After which, it will store the data in the tags for the SSEQ.
-void GetTime(const std::string &filename, const SDAT *sdat, const SSEQ *sseq, TagList &tags, bool verbose)
+void GetTime(const std::string &filename, const SDAT *sdat, const SSEQ *sseq, TagList &tags, bool verbose, uint32_t numberOfLoops)
 {
 	auto player = std::auto_ptr<TimerPlayer>(new TimerPlayer());
 	player->Setup(sseq);
 	player->maxSeconds = 6000;
 	// Get the time, without "playing" the notes
-	Time length = GetTime(player.get(), 20);
+	Time length = GetTime(player.get(), 20, numberOfLoops);
 	// If the length was for a one-shot song, get the time again, this time "playing" the notes
 	bool gotLength = false;
 	if (static_cast<int>(length.time) != -1 && length.type == END)
@@ -325,7 +325,7 @@ void GetTime(const std::string &filename, const SDAT *sdat, const SSEQ *sseq, Ta
 		player->maxSeconds = length.time + 30;
 		player->doNotes = true;
 		Time oldLength = length;
-		length = GetTime(player.get(), 40);
+		length = GetTime(player.get(), 40, numberOfLoops);
 		if (static_cast<int>(length.time) != -1)
 			gotLength = true;
 		else

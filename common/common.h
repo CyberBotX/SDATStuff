@@ -1,7 +1,7 @@
 /*
  * SDAT - Common functions
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2013-03-28
  */
 
 #ifndef SDAT_COMMON_H
@@ -15,6 +15,7 @@
 #include <sstream>
 #include <typeinfo>
 #include <algorithm>
+#include <iostream>
 #include <cstring>
 #include <cctype>
 #include "pstdint.h"
@@ -26,6 +27,7 @@
 #else
 # include <dirent.h>
 #endif
+#include "optionparser.h"
 
 /*
  * Pseudo-file data structures
@@ -537,6 +539,7 @@ inline std::string GetFilenameFromPath(const std::string &path)
 		return path;
 	return path.substr(lastSlash + 1);
 }
+
 // The idea behind this function comes from VGMToolbox, however the actual functionality
 // of it is much smoother than the one in VGMToolbox, as this leverages the std::search
 // function to get the offset in the data vector
@@ -565,6 +568,40 @@ inline std::string SecondsToString(double seconds)
 		time += "0";
 	time += stringify(seconds);
 	return time;
+}
+
+// The following functions are for the options parser
+
+inline option::ArgStatus RequireArgument(const option::Option &opt, bool msg)
+{
+	if (opt.arg && *opt.arg)
+		return option::ARG_OK;
+
+	if (msg)
+		std::cerr << "Option '" << std::string(opt.name).substr(0, opt.namelen) << "' requires a non-empty argument.\n";
+	return option::ARG_ILLEGAL;
+}
+
+inline bool IsDigitsOnly(const std::string &input, const std::locale &loc = std::locale::classic())
+{
+	auto inputChars = std::vector<char>(input.begin(), input.end());
+	size_t length = inputChars.size();
+	auto masks = std::vector<std::ctype<char>::mask>(length);
+	std::use_facet<std::ctype<char> >(loc).is(&inputChars[0], &inputChars[length], &masks[0]);
+	for (size_t x = 0; x < length; ++x)
+		if (inputChars[x] != '.' && !(masks[x] & std::ctype<char>::digit))
+			return false;
+	return true;
+}
+
+inline option::ArgStatus RequireNumericArgument(const option::Option &opt, bool msg)
+{
+	if (opt.arg && *opt.arg && IsDigitsOnly(opt.arg))
+		return option::ARG_OK;
+
+	if (msg)
+		std::cerr << "Option '" << std::string(opt.name).substr(0, opt.namelen) << "' requires a non-empty numeric argument.\n";
+	return option::ARG_ILLEGAL;
 }
 
 #endif

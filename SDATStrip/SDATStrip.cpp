@@ -1,7 +1,7 @@
 /*
  * SDAT Strip
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-26
+ * Last modification on 2013-03-28
  *
  * NOTE: This version has been superceded by NDS to NCSF instead.
  *
@@ -12,23 +12,10 @@
  *                     - Copied NDS to NCSF's include/exclude handling to here.
  */
 
-#include <iostream>
 #include <map>
-#include <cctype>
 #include "SDAT.h"
-#include "optionparser.h"
 
 static const std::string SDATSTRIP_VERSION = "1.1";
-
-static inline option::ArgStatus RequireArgument(const option::Option &opt, bool msg)
-{
-	if (opt.arg && *opt.arg)
-		return option::ARG_OK;
-
-	if (msg)
-		std::cerr << "Option '" << std::string(opt.name).substr(0, opt.namelen) << "' requires a non-empty argument.\n";
-	return option::ARG_ILLEGAL;
-}
 
 enum { UNKNOWN, HELP, VERBOSE, FORCE, EXCLUDE, INCLUDE };
 const option::Descriptor opts[] =

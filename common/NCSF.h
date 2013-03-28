@@ -1,7 +1,7 @@
 /*
  * Common NCSF functions
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2013-03-28
  */
 
 #ifndef NCSF_H
@@ -22,6 +22,6 @@ std::vector<uint8_t> GetProgramSectionFromNCSF(PseudoReadFile &file);
 TagList GetTagsFromNCSF(PseudoReadFile &file);
 Files GetFilesInNCSFDirectory(const std::string &path);
 void RemoveFiles(const Files &files);
-void GetTime(const std::string &filename, const SDAT *sdat, const SSEQ *sseq, TagList &tags, bool verbose);
+void GetTime(const std::string &filename, const SDAT *sdat, const SSEQ *sseq, TagList &tags, bool verbose, uint32_t numberOfLoops);
 
 #endif
