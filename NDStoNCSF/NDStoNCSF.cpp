@@ -338,7 +338,8 @@ int main(int argc, char *argv[])
 			countryCodes['J'] = "JPN";
 			countryCodes['E'] = "USA";
 			countryCodes['P'] = "EUR";
-			countryCodes['D'] = countryCodes['F'] = "NOE";
+			countryCodes['D'] = "GER";
+			countryCodes['F'] = "FRA";
 			countryCodes['I'] = "ITA";
 			countryCodes['S'] = "SPA";
 			countryCodes['H'] = "HOL";
