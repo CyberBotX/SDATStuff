@@ -305,7 +305,7 @@ static Time GetTime(TimerPlayer *player, uint32_t loopCount, uint32_t numberOfLo
 // music), if the song is one-shot (and not looping), it will run the player
 // a second time, "playing" the song to determine when silence has occurred.
 // After which, it will store the data in the tags for the SSEQ.
-void GetTime(const std::string &filename, const SDAT *sdat, const SSEQ *sseq, TagList &tags, bool verbose, uint32_t numberOfLoops)
+void GetTime(const std::string &filename, const SDAT *sdat, const SSEQ *sseq, TagList &tags, bool verbose, uint32_t numberOfLoops, uint32_t fadeLoop, uint32_t fadeOneShot)
 {
 	auto player = std::auto_ptr<TimerPlayer>(new TimerPlayer());
 	player->Setup(sseq);
@@ -334,9 +334,9 @@ void GetTime(const std::string &filename, const SDAT *sdat, const SSEQ *sseq, Ta
 	if (static_cast<int>(length.time) != -1)
 	{
 		if (length.type == LOOP)
-			tags["fade"] = "10";
+			tags["fade"] = stringify(fadeLoop);
 		else
-			tags["fade"] = "1";
+			tags["fade"] = stringify(fadeOneShot);
 		if (!static_cast<int>(length.time))
 			length.time = 1;
 		std::string lengthString = SecondsToString(std::ceil(length.time));

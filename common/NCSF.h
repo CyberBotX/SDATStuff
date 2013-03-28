@@ -22,6 +22,6 @@ std::vector<uint8_t> GetProgramSectionFromNCSF(PseudoReadFile &file);
 TagList GetTagsFromNCSF(PseudoReadFile &file);
 Files GetFilesInNCSFDirectory(const std::string &path);
 void RemoveFiles(const Files &files);
-void GetTime(const std::string &filename, const SDAT *sdat, const SSEQ *sseq, TagList &tags, bool verbose, uint32_t numberOfLoops);
+void GetTime(const std::string &filename, const SDAT *sdat, const SSEQ *sseq, TagList &tags, bool verbose, uint32_t numberOfLoops, uint32_t fadeLoop, uint32_t fadeOneShot);
 
 #endif

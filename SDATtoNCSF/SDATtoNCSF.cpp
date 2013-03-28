@@ -9,13 +9,14 @@
  * Version history:
  *   v1.0 - 2013-03-25 - Initial version
  *   v1.1 - 2013-03-28 - Made timing to be on by default, with 2 loops.
+ *                     - Added options to change the fade times.
  */
 
 #include "NCSF.h"
 
 static const std::string SDATTONCSF_VERSION = "1.1";
 
-enum { UNKNOWN, HELP, VERBOSE, TIME };
+enum { UNKNOWN, HELP, VERBOSE, TIME, FADELOOP, FADEONESHOT };
 const option::Descriptor opts[] =
 {
 	option::Descriptor(UNKNOWN, 0, "", "", option::Arg::None, "SDAT to NCSF v" + SDATTONCSF_VERSION + "\nBy Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]\n\n"
@@ -28,6 +29,8 @@ const option::Descriptor opts[] =
 	option::Descriptor(VERBOSE, 0, "v", "verbose", option::Arg::None, "  --verbose,-v \tVerbose output."),
 	option::Descriptor(TIME, 0, "t", "time", RequireNumericArgument,
 		"  --time,-t \tCalculate time on each track to the number of loops given.  Defaults to 2 loops.  0 will disable timing."),
+	option::Descriptor(FADELOOP, 0, "l", "fade-loop", RequireNumericArgument, "  --fade-loop,-l \tSet the fade time for looping tracks, in seconds, defaults to 10."),
+	option::Descriptor(FADEONESHOT, 0, "o", "fade-one-shot", RequireNumericArgument, "  --fade-one-shot,-o \tSet the fade time for one-shot tracks, in seconds, defaults to 0."),
 	option::Descriptor(UNKNOWN, 0, "", "", option::Arg::None, "\nVerbose output will output the NCSFs created.\n\nTiming uses code based on FeOS Sound System by fincs."),
 	option::Descriptor()
 };
@@ -53,6 +56,12 @@ int main(int argc, char *argv[])
 	uint32_t numberOfLoops = 2;
 	if (options[TIME])
 		numberOfLoops = convertTo<uint32_t>(options[TIME].arg);
+	uint32_t fadeLoop = 10;
+	if (options[FADELOOP])
+		fadeLoop = convertTo<uint32_t>(options[FADELOOP].arg);
+	uint32_t fadeOneShot = 1;
+	if (options[FADEONESHOT])
+		fadeOneShot = convertTo<uint32_t>(options[FADEONESHOT].arg);
 
 	try
 	{
@@ -96,7 +105,7 @@ int main(int argc, char *argv[])
 			auto reservedData = IntToLEVector<uint32_t>(0);
 
 			if (numberOfLoops)
-				GetTime(ncsfFilename, &sdat, sdat.infoSection.SEQrecord.entries[0].sseq, tags, !!options[VERBOSE], numberOfLoops);
+				GetTime(ncsfFilename, &sdat, sdat.infoSection.SEQrecord.entries[0].sseq, tags, !!options[VERBOSE], numberOfLoops, fadeLoop, fadeOneShot);
 
 			MakeNCSF(dirName + "/" + ncsfFilename, reservedData, *fileData.data.get(), tags.GetTags());
 			if (options[VERBOSE])
@@ -128,7 +137,7 @@ int main(int argc, char *argv[])
 				thisTags["origFilename"] = sdat.infoSection.SEQrecord.entries[i].sseq->origFilename;
 
 				if (numberOfLoops)
-					GetTime(minincsfFilename, &sdat, sdat.infoSection.SEQrecord.entries[i].sseq, thisTags, !!options[VERBOSE], numberOfLoops);
+					GetTime(minincsfFilename, &sdat, sdat.infoSection.SEQrecord.entries[i].sseq, thisTags, !!options[VERBOSE], numberOfLoops, fadeLoop, fadeOneShot);
 
 				MakeNCSF(dirName + "/" + minincsfFilename, reservedData, std::vector<uint8_t>(), thisTags.GetTags());
 				if (options[VERBOSE])
