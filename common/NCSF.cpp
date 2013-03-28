@@ -337,7 +337,9 @@ void GetTime(const std::string &filename, const SDAT *sdat, const SSEQ *sseq, Ta
 			tags["fade"] = "10";
 		else
 			tags["fade"] = "1";
-		std::string lengthString = SecondsToString(length.time);
+		if (!static_cast<int>(length.time))
+			length.time = 1;
+		std::string lengthString = SecondsToString(std::ceil(length.time));
 		tags["length"] = lengthString;
 		if (verbose)
 		{
