@@ -1,16 +1,45 @@
 NCSF/SDAT Utilities
 By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
 
+(If you need to email me, please include NCSF in the subject line.)
+
+Special thanks to fincs for FeOS Sound System, as well as the DeSmuME
+team for their open-source Nintendo DS emulator.
+
+NDS to NCSF Version History
+---------------------------
+v1.0 - 2013-03-25 - Initial Version
+v1.1 - 2013-03-26 - Merged SDAT Strip's verbosity into the SDAT class'
+                    Strip function.
+                  - Modified how excluded SSEQs are handled when stripping.
+                  - Corrected handling of files within an existing SDAT.
+v1.2 - 2013-03-28 - Made timing to be on by default, with 2 loops.
+                  - Added options to change the fade times.
+
+SDAT Strip Version History
+--------------------------
+v1.0 - 2013-03-25 - Initial Version
+v1.1 - 2013-03-26 - Merged verbosity of SDAT stripping into the SDAT class
+                    and removed the static Strip function from this.
+                  - Copied NDS to NCSF's include/exclude handling to here.
+
+SDAT to NCSF Version History
+----------------------------
+v1.0 - 2013-03-25 - Initial Version
+v1.1 - 2013-03-28 - Made timing to be on by default, with 2 loops.
+                  - Added options to change the fade times.
+
 These utilities are used to work with SDAT files from Nintendo DS ROMs.  SDATs are
 created through Nitro Composor, a program in the Nintendo Nitro SDK for the DS.
 NCSF is a PSF-style music format that uses the SDAT as it's "program".
 
 Contains:
-*  NDS to NCSF v1.0 - A utility to take a Nintendo DS ROM and create an NCSF out of it.
-*   SDAT Strip v1.0 - A utility to take an SDAT and strip it of all unneccesary items.
+*  NDS to NCSF v1.2 - A utility to take a Nintendo DS ROM and create an NCSF out of it.
+*   SDAT Strip v1.1 - A utility to take an SDAT and strip it of all unneccesary items.
                       (NOTE: Superceded by NDS to NCSF.)
-* SDAT to NCSF v1.0 - A utility to take an SDAT and create an NCSF out of it.
+* SDAT to NCSF v1.1 - A utility to take an SDAT and create an NCSF out of it.
                       (NOTE: Superceded by NDS to NCSF.)
+*    zlib DLL v1.25 - Required by NDS to NCSF and SDAT to NCSF.
 
 WINDOWS
 -------
@@ -40,14 +69,16 @@ is also required.  zlib can be obtained from here:
 
 http://www.zlib.net/
 
-You need to download the "compiled DLL" version.  Once you have this, you need to modify
-each of the projects to point to the correct location of zlib.  In all the projects,
-under Configuration Properties -> C/C++ -> General, there is a ZLIBFIXME before the zlib
-path of "Additional Include Directories".  Replace the FIXME with the path to where you
-extracted zlib.  The same will be done to "Additional Library Dependencies" under
-Configuration Properties -> Linker -> General for the NDStoNCSF and SDATtoNCSF projects,
-as well as "Command Line" under Configuration Properties -> Build Events -> Post-Build
-Event under those same 2 projects.  Once this has been done, you can compile the solution.
+You need to download the "compiled DLL" version.
+
+Once you have this, you need to modify each of the projects to point to the correct
+location of zlib.  In all the projects, under Configuration Properties -> C/C++ -> General,
+there is a ZLIBFIXME before the zlib path of "Additional Include Directories".  Replace
+the ZLIBFIXME with the path to where you extracted zlib.  The same will be done to "Additional
+Library Dependencies" under Configuration Properties -> Linker -> General for the NDStoNCSF
+and SDATtoNCSF projects, as well as "Command Line" under Configuration Properties -> Build
+Events -> Post-Build Event under those same 2 projects.  Once this has been done, you can
+compile the solution.
 
 UNIX-LIKE OPERATING SYSTEMS
 ---------------------------
