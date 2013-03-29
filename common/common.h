@@ -1,7 +1,7 @@
 /*
  * SDAT - Common functions
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-28
+ * Last modification on 2013-03-29
  */
 
 #ifndef SDAT_COMMON_H
@@ -500,19 +500,19 @@ typedef std::vector<KeepInfo> IncOrExc;
 inline KeepType IncludeFilename(const std::string &filename, const std::string &sdatNumber, const IncOrExc &includesAndExcludes)
 {
 	KeepType keep = KEEP_NEITHER;
-	for (auto curr = includesAndExcludes.begin(), end = includesAndExcludes.end(); curr != end; ++curr)
+	std::for_each(includesAndExcludes.begin(), includesAndExcludes.end(), [&](const KeepInfo &info)
 	{
-		size_t slash = curr->filename.find('/');
+		size_t slash = info.filename.find('/');
 		if (slash != std::string::npos)
 		{
-			std::string currSDATNumber = curr->filename.substr(0, slash);
-			std::string currFilename = curr->filename.substr(slash + 1);
+			std::string currSDATNumber = info.filename.substr(0, slash);
+			std::string currFilename = info.filename.substr(slash + 1);
 			if (WildcardCompare(sdatNumber, currSDATNumber) && WildcardCompare(filename, currFilename))
-				keep = curr->keep;
+				keep = info.keep;
 		}
-		else if (WildcardCompare(filename, curr->filename))
-			keep = curr->keep;
-	}
+		else if (WildcardCompare(filename, info.filename))
+			keep = info.keep;
+	});
 	return keep;
 }
 
