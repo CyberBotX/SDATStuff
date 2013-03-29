@@ -1,7 +1,7 @@
 /*
  * SDAT - SDAT structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-26
+ * Last modification on 2013-03-29
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
@@ -158,12 +158,9 @@ void SDAT::Write(PseudoWrite &file) const
 
 SDAT::~SDAT()
 {
-	for (auto curr = this->SSEQs.begin(), end = this->SSEQs.end(); curr != end; ++curr)
-		delete *curr;
-	for (auto curr = this->SBNKs.begin(), end = this->SBNKs.end(); curr != end; ++curr)
-		delete *curr;
-	for (auto curr = this->SWARs.begin(), end = this->SWARs.end(); curr != end; ++curr)
-		delete *curr;
+	std::for_each(this->SSEQs.begin(), this->SSEQs.end(), [](SSEQ *sseq) { delete sseq; });
+	std::for_each(this->SBNKs.begin(), this->SBNKs.end(), [](SBNK *sseq) { delete sseq; });
+	std::for_each(this->SWARs.begin(), this->SWARs.end(), [](SWAR *sseq) { delete sseq; });
 }
 
 // Appends another SDAT to this one
@@ -297,16 +294,16 @@ template<typename T, typename U> static inline void OutputVector(const std::vect
 	const std::string &outputPrefix = " ", size_t columnWidth = 80)
 {
 	std::string output = outputPrefix;
-	for (size_t i = 0, count = vec.size(); i < count; ++i)
+	std::for_each(vec.begin(), vec.end(), [&](const T &item)
 	{
-		std::string keep = nameSource[vec[i]].FullFilename(multipleSDATs);
+		std::string keep = nameSource[item].FullFilename(multipleSDATs);
 		if (output.size() + keep.size() > columnWidth)
 		{
 			std::cout << output << "\n";
 			output = "   ";
 		}
 		output += " " + keep + ",";
-	}
+	});
 	if (!output.empty())
 	{
 		output.erase(output.end() - 1);
@@ -318,11 +315,11 @@ template<typename T, typename U> static inline void OutputVector(const std::vect
 template<typename T, typename U, typename V> static inline void OutputMap(const std::map<T, U> &map, const std::vector<V> &nameSource, bool multipleSDATs,
 	size_t columnWidth = 80)
 {
-	for (auto curr = map.begin(), end = map.end(); curr != end; ++curr)
+	std::for_each(map.begin(), map.end(), [&](const std::pair<T, U> &curr)
 	{
-		std::string output = "  " + nameSource[curr->first].FullFilename(multipleSDATs) + ":";
-		OutputVector(curr->second, nameSource, multipleSDATs, output, columnWidth);
-	}
+		std::string output = "  " + nameSource[curr.first].FullFilename(multipleSDATs) + ":";
+		OutputVector(curr.second, nameSource, multipleSDATs, output, columnWidth);
+	});
 }
 
 // Strips data out of an SDAT.  This consists of removing duplicate SSEQs, SBNKs, and SWARs,
@@ -594,8 +591,7 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 		newSSEQs.push_back(*sseq);
 		this->SSEQs.erase(sseq);
 	}
-	for (auto curr = this->SSEQs.begin(), end = this->SSEQs.end(); curr != end; ++curr)
-		delete *curr;
+	std::for_each(this->SSEQs.begin(), this->SSEQs.end(), [](SSEQ *sseq) { delete sseq; });
 
 	std::vector<SBNK *> newSBNKs;
 	for (size_t i = 0, num = SBNKsToKeep.size(); i < num; ++i)
@@ -618,8 +614,7 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 		newSBNKs.push_back(*sbnk);
 		this->SBNKs.erase(sbnk);
 	}
-	for (auto curr = this->SBNKs.begin(), end = this->SBNKs.end(); curr != end; ++curr)
-		delete *curr;
+	std::for_each(this->SBNKs.begin(), this->SBNKs.end(), [](SBNK *sbnk) { delete sbnk; });
 
 	std::vector<SWAR *> newSWARs;
 	for (size_t i = 0, num = SWARsToKeep.size(); i < num; ++i)
@@ -634,8 +629,7 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 		newSWARs.push_back(*swar);
 		this->SWARs.erase(swar);
 	}
-	for (auto curr = this->SWARs.begin(), end = this->SWARs.end(); curr != end; ++curr)
-		delete *curr;
+	std::for_each(this->SWARs.begin(), this->SWARs.end(), [](SWAR *swar) { delete swar; });
 
 	if (this->SYMBOffset)
 		this->symbSection = newSymbSection;
