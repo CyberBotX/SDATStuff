@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 
 	// Get exclude and include filenames from the command line
 	IncOrExc includesAndExcludes;
-	for (int i = 0; i < parse.optionsCount(); ++i)
+	for (int i = 0, optionCount = parse.optionsCount(); i < optionCount; ++i)
 	{
 		const option::Option &opt = buffer[i];
 		if (opt.index() == EXCLUDE)
