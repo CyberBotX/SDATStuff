@@ -63,9 +63,9 @@ void MakeNCSF(const std::string &filename, const std::vector<uint8_t> &reservedS
 	file.close();
 }
 
-// Check if the given file data is a valid NCSF, throwing an exception if it's
-// not a valid NCSF
-void CheckForValidNCSF(PseudoReadFile &file)
+// Check if the given file data is a valid PSF, throwing an exception if it's
+// not a valid PSF
+void CheckForValidPSF(PseudoReadFile &file, uint8_t versionByte)
 {
 	// Various checks on the file's size will be done throughout
 	if (file.data->size() < 4)
@@ -81,8 +81,9 @@ void CheckForValidNCSF(PseudoReadFile &file)
 	if (PSFHeader[0] != 'P' || PSFHeader[1] != 'S' || PSFHeader[2] != 'F')
 		throw std::runtime_error("Not a PSF file.");
 
-	if (PSFHeader[3] != 0x25)
-		throw std::runtime_error("Not an NCSF file.");
+	if (PSFHeader[3] != versionByte)
+		throw std::runtime_error("Version byte of " + NumToHexString<uint8_t>(PSFHeader[3]) +
+			" does not equal what we were looking for (" + NumToHexString(versionByte) + ").");
 
 	if (file.data->size() < 16)
 		throw std::range_error("File is too small.");
@@ -104,12 +105,12 @@ void CheckForValidNCSF(PseudoReadFile &file)
 		throw std::range_error("File is too small.");
 }
 
-// Extract the program section from an NCSF.  Does not do any checks on the file,
-// as those will be done in CheckForValidNCSF anyways.
-std::vector<uint8_t> GetProgramSectionFromNCSF(PseudoReadFile &file)
+// Extract the program section from a PSF.  Does not do any checks on the file,
+// as those will be done in CheckForValidPSF anyways.
+std::vector<uint8_t> GetProgramSectionFromPSF(PseudoReadFile &file, uint8_t versionByte, uint32_t programHeaderSize, uint32_t programSizeOffset)
 {
 	// Check to make sure the file is valid
-	CheckForValidNCSF(file);
+	CheckForValidPSF(file, versionByte);
 
 	// Get the sizes on the reserved and program sections
 	file.pos = 4;
@@ -122,8 +123,7 @@ std::vector<uint8_t> GetProgramSectionFromNCSF(PseudoReadFile &file)
 	if (!programCompressedSize)
 		throw std::range_error("There is no program section in this NCSF.");
 
-	// If there is a reserved section (only on an NCSF and not on an NCSFLIB),
-	// skip over it
+	// If there is a reserved section, skip over it
 	if (reservedSize)
 		file.pos += reservedSize;
 
@@ -134,10 +134,10 @@ std::vector<uint8_t> GetProgramSectionFromNCSF(PseudoReadFile &file)
 	// Uncompress the program section, the reason uncompress is called twice:
 	// first call is to get just the first 4 bytes that tell the size of the
 	// entire uncompressed section, second call gets everything
-	auto programSectionUncompressed = std::vector<uint8_t>(12);
-	unsigned long programUncompressedSize = 12;
+	auto programSectionUncompressed = std::vector<uint8_t>(programHeaderSize);
+	unsigned long programUncompressedSize = programHeaderSize;
 	uncompress(&programSectionUncompressed[0], &programUncompressedSize, &programSectionCompressed[0], programCompressedSize);
-	programUncompressedSize = ReadLE<uint32_t>(&programSectionUncompressed[8]);
+	programUncompressedSize = ReadLE<uint32_t>(&programSectionUncompressed[programSizeOffset]);
 	programSectionUncompressed.resize(programUncompressedSize);
 	uncompress(&programSectionUncompressed[0], &programUncompressedSize, &programSectionCompressed[0], programCompressedSize);
 
@@ -172,11 +172,11 @@ static inline std::string TrimWhitespace(const std::string &orig)
 	return LeftTrimWhitespace(RightTrimWhitespace(orig));
 }
 
-// Get only the tags from the NCSF
-TagList GetTagsFromNCSF(PseudoReadFile &file)
+// Get only the tags from the PSF
+TagList GetTagsFromPSF(PseudoReadFile &file, uint8_t versionByte)
 {
 	// Check to make sure the file is valid
-	CheckForValidNCSF(file);
+	CheckForValidPSF(file, versionByte);
 
 	TagList tags;
 

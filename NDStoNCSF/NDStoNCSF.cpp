@@ -13,6 +13,9 @@
  *                     - Added options to change the fade times.
  *   v1.3 - 2013-03-29 - Only remove files from the destination directory that
  *                       were created by this utility, instead of all files.
+ *                     - Slightly better file checking when copying from an
+ *                       existing SDAT, will check by data only if checking by
+ *                       filename and data doesn't give any results.
  */
 
 #include "NCSF.h"
@@ -127,7 +130,6 @@ int main(int argc, char *argv[])
 			Files files = GetFilesInNCSFDirectory(dirName);
 
 			if (!options[NOCOPY])
-			{
 				for (auto curr = files.begin(), end = files.end(); curr != end; ++curr)
 				{
 					try
@@ -143,7 +145,7 @@ int main(int argc, char *argv[])
 
 						if (curr->rfind(".ncsf") != std::string::npos || curr->rfind(".ncsflib") != std::string::npos)
 						{
-							auto sdatVector = GetProgramSectionFromNCSF(ncsfFileData);
+							auto sdatVector = GetProgramSectionFromPSF(ncsfFileData, 0x25, 12, 8);
 
 							PseudoReadFile sdatFileData((*curr));
 							sdatFileData.GetDataFromVector(sdatVector.begin(), sdatVector.end());
@@ -157,7 +159,7 @@ int main(int argc, char *argv[])
 						if (curr->rfind(".ncsf") != std::string::npos || curr->rfind(".minincsf") != std::string::npos)
 						{
 							std::string filename = GetFilenameFromPath(*curr);
-							TagList tags = GetTagsFromNCSF(ncsfFileData);
+							TagList tags = GetTagsFromPSF(ncsfFileData, 0x25);
 							if (tags.Exists("origFilename"))
 							{
 								std::string fullOrigFilename = tags["origFilename"];
@@ -174,7 +176,6 @@ int main(int argc, char *argv[])
 					{
 					}
 				}
-			}
 
 			RemoveFiles(files);
 		}
@@ -238,14 +239,16 @@ int main(int argc, char *argv[])
 
 				KeepType keep = IncludeFilename(filename, finalSDAT.infoSection.SEQrecord.entries[i].sdatNumber, includesAndExcludes);
 
+				// This file was neither included or excluded on the command line, we need to check if it already existed in the old SDAT
 				if (keep == KEEP_NEITHER)
 				{
+					// First check by filename as well as data
 					size_t count = oldSDATFiles.count(filename);
 					bool exclude = true;
+					const auto &thisData = finalSDAT.infoSection.SEQrecord.entries[i].sseq->data;
 					if (count > 0)
 					{
 						auto range = oldSDATFiles.equal_range(filename);
-						const auto &thisData = finalSDAT.infoSection.SEQrecord.entries[i].sseq->data;
 						auto curr = range.first;
 						auto end = range.second;
 						for (; curr != end; ++curr)
@@ -258,6 +261,18 @@ int main(int argc, char *argv[])
 							}
 						}
 					}
+					// If we are still excluding the file, then we will check by binary comparing the data only
+					if (exclude)
+						for (auto curr = oldSDATFiles.begin(), end = oldSDATFiles.end(); curr != end; ++curr)
+						{
+							const auto &currData = curr->second.data;
+							if (thisData == currData)
+							{
+								exclude = false;
+								break;
+							}
+						}
+					// Now, if we are still excluding the file, we add it to the temp list, otherwise we put it into a list to keep
 					if (exclude)
 						tempIncludesAndExcludes.push_back(KeepInfo(fullFilename, KEEP_EXCLUDE));
 					else
