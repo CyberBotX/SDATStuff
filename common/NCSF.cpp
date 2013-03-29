@@ -260,8 +260,7 @@ Files GetFilesInNCSFDirectory(const std::string &path)
 // Remove the files in the given list of files
 void RemoveFiles(const Files &files)
 {
-	for (auto curr = files.begin(), end = files.end(); curr != end; ++curr)
-		remove(curr->c_str());
+	std::for_each(files.begin(), files.end(), [](const std::string &file) { remove(file.c_str()); });
 }
 
 // Get time on SSEQ (uses a separate thread so it can be killed off if it takes longer than a few seconds)
