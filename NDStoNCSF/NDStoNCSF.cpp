@@ -249,33 +249,21 @@ int main(int argc, char *argv[])
 					// Data comparison lambda
 					auto dataCompare = [&](const std::pair<std::string, SSEQ> &curr)
 					{
-						const auto &currData = curr.second.data;
-						if (thisData == currData)
+						if (exclude)
 						{
-							exclude = false;
-							throw std::exception();
+							auto &currData = curr.second.data;
+							if (thisData == currData)
+								exclude = false;
 						}
 					};
 					if (count > 0)
 					{
 						auto range = oldSDATFiles.equal_range(filename);
-						try
-						{
-							std::for_each(range.first, range.second, dataCompare);
-						}
-						catch (const std::exception &)
-						{
-						}
+						std::for_each(range.first, range.second, dataCompare);
 					}
 					// If we are still excluding the file, then we will check by binary comparing the data only
 					if (exclude)
-						try
-						{
-							std::for_each(oldSDATFiles.begin(), oldSDATFiles.end(), dataCompare);
-						}
-						catch (const std::exception &)
-						{
-						}
+						std::for_each(oldSDATFiles.begin(), oldSDATFiles.end(), dataCompare);
 					// Now, if we are still excluding the file, we add it to the temp list, otherwise we put it into a list to keep
 					if (exclude)
 						tempIncludesAndExcludes.push_back(KeepInfo(fullFilename, KEEP_EXCLUDE));
