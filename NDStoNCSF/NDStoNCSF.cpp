@@ -127,7 +127,9 @@ int main(int argc, char *argv[])
 		std::multimap<std::string, SSEQ> oldSDATFiles;
 		if (DirExists(dirName))
 		{
-			Files files = GetFilesInNCSFDirectory(dirName);
+			std::string extensions[] = { ".ncsf", ".minincsf", ".ncsflib" };
+			auto extensionsVector = std::vector<std::string>(extensions, extensions + 3);
+			Files files = GetFilesInDirectory(dirName, extensionsVector);
 
 			if (!options[NOCOPY])
 				for (auto curr = files.begin(), end = files.end(); curr != end; ++curr)

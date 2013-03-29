@@ -225,8 +225,15 @@ TagList GetTagsFromPSF(PseudoReadFile &file, uint8_t versionByte)
 	return tags;
 }
 
-// Get a list of NCSF files in the given directory
-Files GetFilesInNCSFDirectory(const std::string &path)
+// A simple function to get a file's extension
+static auto GetExtension = [](const std::string &filename) -> std::string
+{
+	auto dot = filename.rfind('.');
+	return dot == std::string::npos ? "" : filename.substr(dot);
+};
+
+// Get a list of files in the given directory
+Files GetFilesInDirectory(const std::string &path, const std::vector<std::string> &extensions)
 {
 	DIR *dir;
 	dirent *entry;
@@ -244,12 +251,14 @@ Files GetFilesInNCSFDirectory(const std::string &path)
 			// saving a little bit of extra code
 			if (DirExists(fullPath))
 				continue;
-			// We want to skip any files that are not related to NCSFs
-			auto dot = filename.rfind('.');
-			std::string extension = dot == std::string::npos ? "" : filename.substr(dot + 1);
-			if (extension != "ncsf" && extension != "minincsf" && extension != "ncsflib")
-				continue;
-			files.push_back(fullPath);
+			// We want to skip any files not matching the extensions we gave, if any
+			std::string thisExtension = GetExtension(filename);
+			auto extensionMatch = std::find_if(extensions.begin(), extensions.end(), [&](const std::string &extension)
+			{
+				return extension == thisExtension;
+			});
+			if (extensions.empty() || extensionMatch != extensions.end())
+				files.push_back(fullPath);
 		}
 
 	closedir(dir);

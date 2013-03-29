@@ -20,7 +20,7 @@ void MakeNCSF(const std::string &filename, const std::vector<uint8_t> &reservedS
 void CheckForValidPSF(PseudoReadFile &file, uint8_t versionByte);
 std::vector<uint8_t> GetProgramSectionFromPSF(PseudoReadFile &file, uint8_t versionByte, uint32_t programHeaderSize, uint32_t programSizeOffset);
 TagList GetTagsFromPSF(PseudoReadFile &file, uint8_t versionByte);
-Files GetFilesInNCSFDirectory(const std::string &path);
+Files GetFilesInDirectory(const std::string &path, const std::vector<std::string> &extensions = std::vector<std::string>());
 void RemoveFiles(const Files &files);
 void GetTime(const std::string &filename, const SDAT *sdat, const SSEQ *sseq, TagList &tags, bool verbose, uint32_t numberOfLoops, uint32_t fadeLoop, uint32_t fadeOneShot);
 
