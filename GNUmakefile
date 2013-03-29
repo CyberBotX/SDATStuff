@@ -7,8 +7,9 @@ TIMER_SRCS:=	$(wildcard common/Timer*.cpp)
 SDATtoNCSF_SRCS:=	SDATtoNCSF/SDATtoNCSF.cpp common/TagList.cpp common/NCSF.cpp $(TIMER_SRCS) $(COMMON_SRCS)
 SDATStrip_SRCS:=	SDATStrip/SDATStrip.cpp $(COMMON_SRCS)
 NDStoNCSF_SRCS:=	NDStoNCSF/NDStoNCSF.cpp common/TagList.cpp common/NCSF.cpp $(TIMER_SRCS) $(COMMON_SRCS)
+2SFTagsToNCSF_SRCS:=	2SFTagsToNCSF/2SFTagsToNCSF.cpp common/TagList.cpp common/NCSF.cpp $(TIMER_SRCS) $(COMMON_SRCS)
 
-PROGS=	SDATtoNCSF/SDATtoNCSF SDATStrip/SDATStrip NDStoNCSF/NDStoNCSF
+PROGS=	SDATtoNCSF/SDATtoNCSF SDATStrip/SDATStrip NDStoNCSF/NDStoNCSF 2SFTagsToNCSF/2SFTagsToNCSF
 PROGS:=	$(sort $(PROGS))
 
 CXX=	g++46
