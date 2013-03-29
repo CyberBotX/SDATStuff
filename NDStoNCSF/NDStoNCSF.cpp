@@ -246,31 +246,35 @@ int main(int argc, char *argv[])
 					size_t count = oldSDATFiles.count(filename);
 					bool exclude = true;
 					const auto &thisData = finalSDAT.infoSection.SEQrecord.entries[i].sseq->data;
+					// Data comparison lambda
+					auto dataCompare = [&](const std::pair<std::string, SSEQ> &curr)
+					{
+						const auto &currData = curr.second.data;
+						if (thisData == currData)
+						{
+							exclude = false;
+							throw std::exception();
+						}
+					};
 					if (count > 0)
 					{
 						auto range = oldSDATFiles.equal_range(filename);
-						auto curr = range.first;
-						auto end = range.second;
-						for (; curr != end; ++curr)
+						try
 						{
-							const auto &currData = curr->second.data;
-							if (thisData == currData)
-							{
-								exclude = false;
-								break;
-							}
+							std::for_each(range.first, range.second, dataCompare);
+						}
+						catch (const std::exception &)
+						{
 						}
 					}
 					// If we are still excluding the file, then we will check by binary comparing the data only
 					if (exclude)
-						for (auto curr = oldSDATFiles.begin(), end = oldSDATFiles.end(); curr != end; ++curr)
+						try
 						{
-							const auto &currData = curr->second.data;
-							if (thisData == currData)
-							{
-								exclude = false;
-								break;
-							}
+							std::for_each(oldSDATFiles.begin(), oldSDATFiles.end(), dataCompare);
+						}
+						catch (const std::exception &)
+						{
 						}
 					// Now, if we are still excluding the file, we add it to the temp list, otherwise we put it into a list to keep
 					if (exclude)
