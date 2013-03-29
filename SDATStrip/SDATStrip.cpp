@@ -1,7 +1,7 @@
 /*
  * SDAT Strip
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-28
+ * Last modification on 2013-03-29
  *
  * NOTE: This version has been superceded by NDS to NCSF instead.
  *
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 
 	// Get exclude and include filenames from the command line
 	IncOrExc includesAndExcludes;
-	for (int i = 0; i < parse.optionsCount(); ++i)
+	for (int i = 0, optionCount = parse.optionsCount(); i < optionCount; ++i)
 	{
 		const option::Option &opt = buffer[i];
 		if (opt.index() == EXCLUDE)
