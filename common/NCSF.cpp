@@ -1,7 +1,7 @@
 /*
  * Common NCSF functions
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-28
+ * Last modification on 2013-03-29
  */
 
 #include <fstream>
@@ -225,7 +225,7 @@ TagList GetTagsFromNCSF(PseudoReadFile &file)
 	return tags;
 }
 
-// Get a list of files in the given directory
+// Get a list of NCSF files in the given directory
 Files GetFilesInNCSFDirectory(const std::string &path)
 {
 	DIR *dir;
@@ -243,6 +243,11 @@ Files GetFilesInNCSFDirectory(const std::string &path)
 			// exists, it can also be used to check if a path is a directory,
 			// saving a little bit of extra code
 			if (DirExists(fullPath))
+				continue;
+			// We want to skip any files that are not related to NCSFs
+			auto dot = filename.rfind('.');
+			std::string extension = dot == std::string::npos ? "" : filename.substr(dot + 1);
+			if (extension != "ncsf" && extension != "minincsf" && extension != "ncsflib")
 				continue;
 			files.push_back(fullPath);
 		}
