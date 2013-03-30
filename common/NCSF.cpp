@@ -185,7 +185,7 @@ TagList GetTagsFromPSF(PseudoReadFile &file, uint8_t versionByte)
 	// Get the starting offset of the tags
 	char TagHeader[] = "[TAG]";
 	auto TagHeaderVector = std::vector<uint8_t>(TagHeader, TagHeader + 5);
-	int32_t TagOffset = GetNextOffset(file, 0, TagHeaderVector);
+	int32_t TagOffset = file.GetNextOffset(0, TagHeaderVector);
 
 	// Only continue on if we have tags
 	if (TagOffset != -1)

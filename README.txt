@@ -6,6 +6,10 @@ By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
 Special thanks to fincs for FeOS Sound System, as well as the DeSmuME
 team for their open-source Nintendo DS emulator.
 
+2SF Tags to NCSF Version History
+--------------------------------
+v1.0 - 2013-03-30 - Initial Version
+
 NDS to NCSF Version History
 ---------------------------
 v1.0 - 2013-03-25 - Initial Version
@@ -15,6 +19,11 @@ v1.1 - 2013-03-26 - Merged SDAT Strip's verbosity into the SDAT class'
                   - Corrected handling of files within an existing SDAT.
 v1.2 - 2013-03-28 - Made timing to be on by default, with 2 loops.
                   - Added options to change the fade times.
+v1.3 - 2013-03-30 - Only remove files from the destination directory that
+                    were created by this utility, instead of all files.
+                  - Slightly better file checking when copying from an
+                    existing SDAT, will check by data only if checking by
+                    filename and data doesn't give any results.
 
 SDAT Strip Version History
 --------------------------
@@ -34,12 +43,13 @@ created through Nitro Composor, a program in the Nintendo Nitro SDK for the DS.
 NCSF is a PSF-style music format that uses the SDAT as it's "program".
 
 Contains:
-*  NDS to NCSF v1.2 - A utility to take a Nintendo DS ROM and create an NCSF out of it.
-*   SDAT Strip v1.1 - A utility to take an SDAT and strip it of all unneccesary items.
-                      (NOTE: Superceded by NDS to NCSF.)
-* SDAT to NCSF v1.1 - A utility to take an SDAT and create an NCSF out of it.
-                      (NOTE: Superceded by NDS to NCSF.)
-*    zlib DLL v1.25 - Required by NDS to NCSF and SDAT to NCSF.
+* 2SF Tags to NCSF v1.0 - A utility to copy tags from a 2SF set into an NCSF set.
+*      NDS to NCSF v1.3 - A utility to take a Nintendo DS ROM and create an NCSF out of it.
+*       SDAT Strip v1.1 - A utility to take an SDAT and strip it of all unneccesary items.
+                          (NOTE: Superceded by NDS to NCSF.)
+*     SDAT to NCSF v1.1 - A utility to take an SDAT and create an NCSF out of it.
+                          (NOTE: Superceded by NDS to NCSF.)
+*        zlib DLL v1.25 - Required by 2SF Tags to NCSF, NDS to NCSF, and SDAT to NCSF.
 
 WINDOWS
 -------
@@ -71,20 +81,15 @@ http://www.zlib.net/
 
 You need to download the "compiled DLL" version.
 
-Once you have this, you need to modify each of the projects to point to the correct
-location of zlib.  In all the projects, under Configuration Properties -> C/C++ -> General,
-there is a ZLIBFIXME before the zlib path of "Additional Include Directories".  Replace
-the ZLIBFIXME with the path to where you extracted zlib.  The same will be done to "Additional
-Library Dependencies" under Configuration Properties -> Linker -> General for the NDStoNCSF
-and SDATtoNCSF projects, as well as "Command Line" under Configuration Properties -> Build
-Events -> Post-Build Event under those same 2 projects.  Once this has been done, you can
-compile the solution.
+Once you have this, you need to modify the value of zlibRootDir in common\common.props.
+Just replace ZLIBFIXME with the directory to which you extracted the above file.  Once
+this has been done, you can compile the solution.
 
 UNIX-LIKE OPERATING SYSTEMS
 ---------------------------
 For Unix-like operating systems, you will need to compile the utilities yourself.
 You will need a compiler that supports C++11, at the very least it's auto keyword
-and the new return value syntax.  For GCC, version 4.4 and later will work.  For
+and the new return value syntax.  For GCC, version 4.6 and later will work.  For
 Clang, nearly any version will work.  You will also need the GNU version of Make.
 This will usually be installed as either "make" or "gmake" depending.  To build
 the utilities, simply run "make" or "gmake" from this directory.

@@ -191,11 +191,12 @@ int main(int argc, char *argv[])
 		std::vector<uint8_t> sdatSignatureVector(sdatSignature, sdatSignature + 8);
 		int32_t sdatOffset, sdatNumber = 0;
 		uint32_t previousOffset = 0;
-		while ((sdatOffset = GetNextOffset(fileData, previousOffset, sdatSignatureVector)) != -1)
+		while ((sdatOffset = fileData.GetNextOffset(previousOffset, sdatSignatureVector)) != -1)
 		{
 			try
 			{
-				fileData.pos = sdatOffset;
+				fileData.pos = 0;
+				fileData.startOffset = sdatOffset;
 				SDAT sdat;
 				sdat.Read(stringify(sdatNumber++ + 1), fileData);
 				finalSDAT += sdat;
@@ -206,6 +207,7 @@ int main(int argc, char *argv[])
 			{
 				--sdatNumber;
 			}
+			fileData.startOffset = 0;
 			previousOffset = sdatOffset + 1;
 		}
 

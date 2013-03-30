@@ -86,7 +86,8 @@ int main(int argc, char *argv[])
 
 				uint8_t sdatSignature[] = { 0x53, 0x44, 0x41, 0x54, 0xFF, 0xFE, 0x00, 0x01 };
 				std::vector<uint8_t> sdatSignatureVector(sdatSignature, sdatSignature + 8);
-				romFileData.pos = GetNextOffset(romFileData, 0, sdatSignatureVector);
+				romFileData.pos = 0;
+				romFileData.startOffset = romFileData.GetNextOffset(0, sdatSignatureVector);
 
 				SDAT sdat;
 				sdat.Read(filename, romFileData, false);

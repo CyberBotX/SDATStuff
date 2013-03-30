@@ -43,13 +43,14 @@ struct PseudoReadFile
 {
 	std::string filename;
 	std::unique_ptr<std::vector<uint8_t>> data;
-	uint32_t pos;
+	uint32_t pos, startOffset;
 
-	PseudoReadFile(const std::string &fn = "") : filename(fn), data(), pos(0)
+	PseudoReadFile(const std::string &fn = "") : filename(fn), data(), pos(0), startOffset(0)
 	{
 	}
 
-	PseudoReadFile(const PseudoReadFile &file) : filename(file.filename), data(new std::vector<uint8_t>(file.data->begin(), file.data->end())), pos(file.pos)
+	PseudoReadFile(const PseudoReadFile &file) : filename(file.filename), data(new std::vector<uint8_t>(file.data->begin(), file.data->end())), pos(file.pos),
+		startOffset(file.startOffset)
 	{
 	}
 
@@ -60,6 +61,7 @@ struct PseudoReadFile
 			this->filename = file.filename;
 			this->data.reset(new std::vector<uint8_t>(file.data->begin(), file.data->end()));
 			this->pos = file.pos;
+			this->startOffset = file.startOffset;
 		}
 		return *this;
 	}
@@ -82,25 +84,25 @@ struct PseudoReadFile
 		file.seekg(0, std::ifstream::beg);
 		this->data.reset(new std::vector<uint8_t>(this->pos));
 		file.read(reinterpret_cast<char *>(&(*this->data.get())[0]), this->pos);
-		this->pos = 0;
+		this->pos = this->startOffset = 0;
 		file.seekg(origPos, std::ifstream::beg);
 	}
 
 	template<typename InputIterator> void GetDataFromVector(InputIterator start, InputIterator end)
 	{
 		this->data.reset(new std::vector<uint8_t>(start, end));
-		this->pos = 0;
+		this->pos = this->startOffset = 0;
 	}
 
 	template<typename T> T ReadLE()
 	{
 		if (!this->data.get())
 			return 0;
-		if (this->pos >= this->data->size() || this->pos + sizeof(T) > this->data->size())
+		if (this->startOffset + this->pos >= this->data->size() || this->startOffset + this->pos + sizeof(T) > this->data->size())
 			throw std::range_error("PseudoReadFile position was set past the end of the data.");
 		T finalVal = 0;
 		for (size_t i = 0; i < sizeof(T); ++i)
-			finalVal |= (*this->data.get())[this->pos++] << (i * 8);
+			finalVal |= (*this->data.get())[this->startOffset + this->pos++] << (i * 8);
 		return finalVal;
 	}
 
@@ -116,9 +118,9 @@ struct PseudoReadFile
 	{
 		if (!this->data.get())
 			return;
-		if (this->pos >= this->data->size() || this->pos + N > this->data->size())
+		if (this->startOffset + this->pos >= this->data->size() || this->startOffset + this->pos + N > this->data->size())
 			throw std::range_error("PseudoReadFile position was set past the end of the data.");
-		memcpy(&arr[0], &(*this->data.get())[this->pos], N);
+		memcpy(&arr[0], &(*this->data.get())[this->startOffset + this->pos], N);
 		this->pos += N;
 	}
 
@@ -134,9 +136,9 @@ struct PseudoReadFile
 	{
 		if (!this->data.get())
 			return;
-		if (this->pos >= this->data->size() || this->pos + arr.size() > this->data->size())
+		if (this->startOffset + this->pos >= this->data->size() || this->startOffset + this->pos + arr.size() > this->data->size())
 			throw std::range_error("PseudoReadFile position was set past the end of the data.");
-		memcpy(&arr[0], &(*this->data.get())[this->pos], arr.size());
+		memcpy(&arr[0], &(*this->data.get())[this->startOffset + this->pos], arr.size());
 		this->pos += arr.size();
 	}
 
@@ -175,6 +177,20 @@ struct PseudoReadFile
 				break;
 		}
 		return x;
+	}
+
+	// The idea behind this function comes from VGMToolbox, however the actual functionality
+	// of it is much smoother than the one in VGMToolbox, as this leverages the std::search
+	// function to get the offset in the data vector
+	int32_t GetNextOffset(uint32_t startingOffset, const std::vector<uint8_t> &searchBytes)
+	{
+		int32_t ret = -1;
+
+		auto offset = std::search(this->data->begin() + startingOffset, this->data->end(), searchBytes.begin(), searchBytes.end());
+		if (offset != this->data->end())
+			ret = offset - this->data->begin();
+
+		return ret;
 	}
 };
 
@@ -563,20 +579,6 @@ inline std::string GetFilenameFromPath(const std::string &path)
 	if (lastSlash == std::string::npos)
 		return path;
 	return path.substr(lastSlash + 1);
-}
-
-// The idea behind this function comes from VGMToolbox, however the actual functionality
-// of it is much smoother than the one in VGMToolbox, as this leverages the std::search
-// function to get the offset in the data vector
-inline int32_t GetNextOffset(PseudoReadFile &file, uint32_t startingOffset, const std::vector<uint8_t> &searchBytes)
-{
-	int32_t ret = -1;
-
-	auto offset = std::search(file.data->begin() + startingOffset, file.data->end(), searchBytes.begin(), searchBytes.end());
-	if (offset != file.data->end())
-		ret = offset - file.data->begin();
-
-	return ret;
 }
 
 // Convert a time from seconds into a human readable string
