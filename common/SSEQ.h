@@ -1,7 +1,7 @@
 /*
  * SDAT - SSEQ (Sequence) structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2013-03-30
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
@@ -18,6 +18,7 @@ struct SSEQ
 	std::string filename, origFilename;
 	std::vector<uint8_t> data;
 
+	int32_t entryNumber;
 	INFOEntrySEQ info;
 
 	SSEQ(const std::string &fn = "", const std::string &origFn = "");

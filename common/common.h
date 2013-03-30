@@ -1,7 +1,7 @@
 /*
  * SDAT - Common functions
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-29
+ * Last modification on 2013-03-30
  */
 
 #ifndef SDAT_COMMON_H
@@ -42,11 +42,36 @@
 struct PseudoReadFile
 {
 	std::string filename;
-	std::auto_ptr<std::vector<uint8_t> > data;
+	std::unique_ptr<std::vector<uint8_t>> data;
 	uint32_t pos;
 
 	PseudoReadFile(const std::string &fn = "") : filename(fn), data(), pos(0)
 	{
+	}
+
+	PseudoReadFile(const PseudoReadFile &file) : filename(file.filename), data(new std::vector<uint8_t>(file.data->begin(), file.data->end())), pos(file.pos)
+	{
+	}
+
+	PseudoReadFile &operator=(const PseudoReadFile &file)
+	{
+		if (this != &file)
+		{
+			this->filename = file.filename;
+			this->data.reset(new std::vector<uint8_t>(file.data->begin(), file.data->end()));
+			this->pos = file.pos;
+		}
+		return *this;
+	}
+
+	void GetDataFromFile(const std::string &fn)
+	{
+		this->filename = fn;
+		std::ifstream file;
+		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+		file.open(fn.c_str(), std::ifstream::in | std::ifstream::binary);
+		this->GetDataFromFile(file);
+		file.close();
 	}
 
 	void GetDataFromFile(std::ifstream &file)
@@ -248,8 +273,8 @@ enum PseudoWriteType
 
 struct PseudoWrite
 {
-	std::auto_ptr<PseudoWriteFile> file;
-	std::auto_ptr<PseudoWriteVector> vector;
+	std::unique_ptr<PseudoWriteFile> file;
+	std::unique_ptr<PseudoWriteVector> vector;
 	PseudoWriteType type;
 
 	PseudoWrite() : file(), vector(new PseudoWriteVector()), type(PSEUDOWRITE_VECTOR)
@@ -587,7 +612,7 @@ inline bool IsDigitsOnly(const std::string &input, const std::locale &loc = std:
 	auto inputChars = std::vector<char>(input.begin(), input.end());
 	size_t length = inputChars.size();
 	auto masks = std::vector<std::ctype<char>::mask>(length);
-	std::use_facet<std::ctype<char> >(loc).is(&inputChars[0], &inputChars[length], &masks[0]);
+	std::use_facet<std::ctype<char>>(loc).is(&inputChars[0], &inputChars[length], &masks[0]);
 	for (size_t x = 0; x < length; ++x)
 		if (inputChars[x] != '.' && !(masks[x] & std::ctype<char>::digit))
 			return false;

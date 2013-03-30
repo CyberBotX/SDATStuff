@@ -1,16 +1,16 @@
 /*
  * SSEQ Player - SDAT SWAR (Wave Archive) structures
  * By Naram Qashat (CyberBotX)
- * Last modification on 2013-03-25
+ * Last modification on 2013-03-30
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
  */
 
 #include "SWAR.h"
-#include "NDSStdHeader.h"
+#include "SDAT.h"
 
-SWAR::SWAR(const std::string &fn) : filename(fn), swavs(), info()
+SWAR::SWAR(const std::string &fn) : filename(fn), swavs(), entryNumber(-1), info()
 {
 }
 
@@ -19,7 +19,17 @@ void SWAR::Read(PseudoReadFile &file)
 	uint32_t startOfSWAR = file.pos;
 	NDSStdHeader header;
 	header.Read(file);
-	header.Verify("SWAR", 0x0100FEFF);
+	try
+	{
+		header.Verify("SWAR", 0x0100FEFF);
+	}
+	catch (const std::exception &)
+	{
+		if (SDAT::failOnMissingFiles)
+			throw;
+		else
+			return;
+	}
 	int8_t type[4];
 	file.ReadLE(type);
 	if (!VerifyHeader(type, "DATA"))

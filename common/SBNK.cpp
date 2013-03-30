@@ -1,14 +1,14 @@
 /*
  * SSEQ Player - SDAT SBNK (Sound Bank) structures
  * By Naram Qashat (CyberBotX)
- * Last modification on 2013-03-25
+ * Last modification on 2013-03-30
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
  */
 
 #include "SBNK.h"
-#include "NDSStdHeader.h"
+#include "SDAT.h"
 
 SBNKInstrumentRange::SBNKInstrumentRange(uint8_t lowerNote, uint8_t upperNote, int recordType) : lowNote(lowerNote), highNote(upperNote),
 	record(recordType), swav(0), swar(0), noteNumber(0), attackRate(0), decayRate(0), sustainLevel(0), releaseRate(0), pan(0)
@@ -79,7 +79,7 @@ void SBNKInstrument::Read(PseudoReadFile &file, uint32_t startOffset)
 	file.pos = endOfInst;
 }
 
-SBNK::SBNK(const std::string &fn) : filename(fn), instruments(), info()
+SBNK::SBNK(const std::string &fn) : filename(fn), instruments(), entryNumber(-1), info()
 {
 }
 
@@ -88,7 +88,17 @@ void SBNK::Read(PseudoReadFile &file)
 	uint32_t startOfSBNK = file.pos;
 	NDSStdHeader header;
 	header.Read(file);
-	header.Verify("SBNK", 0x0100FEFF);
+	try
+	{
+		header.Verify("SBNK", 0x0100FEFF);
+	}
+	catch (const std::exception &)
+	{
+		if (SDAT::failOnMissingFiles)
+			throw;
+		else
+			return;
+	}
 	int8_t type[4];
 	file.ReadLE(type);
 	if (!VerifyHeader(type, "DATA"))

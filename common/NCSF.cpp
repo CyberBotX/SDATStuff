@@ -1,7 +1,7 @@
 /*
  * Common NCSF functions
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-29
+ * Last modification on 2013-03-30
  */
 
 #include <fstream>
@@ -107,7 +107,7 @@ void CheckForValidPSF(PseudoReadFile &file, uint8_t versionByte)
 
 // Extract the program section from a PSF.  Does not do any checks on the file,
 // as those will be done in CheckForValidPSF anyways.
-std::vector<uint8_t> GetProgramSectionFromPSF(PseudoReadFile &file, uint8_t versionByte, uint32_t programHeaderSize, uint32_t programSizeOffset)
+std::vector<uint8_t> GetProgramSectionFromPSF(PseudoReadFile &file, uint8_t versionByte, uint32_t programHeaderSize, uint32_t programSizeOffset, bool addHeaderSize)
 {
 	// Check to make sure the file is valid
 	CheckForValidPSF(file, versionByte);
@@ -121,7 +121,7 @@ std::vector<uint8_t> GetProgramSectionFromPSF(PseudoReadFile &file, uint8_t vers
 
 	// We need a program section to continue
 	if (!programCompressedSize)
-		throw std::range_error("There is no program section in this NCSF.");
+		return std::vector<uint8_t>();
 
 	// If there is a reserved section, skip over it
 	if (reservedSize)
@@ -138,6 +138,8 @@ std::vector<uint8_t> GetProgramSectionFromPSF(PseudoReadFile &file, uint8_t vers
 	unsigned long programUncompressedSize = programHeaderSize;
 	uncompress(&programSectionUncompressed[0], &programUncompressedSize, &programSectionCompressed[0], programCompressedSize);
 	programUncompressedSize = ReadLE<uint32_t>(&programSectionUncompressed[programSizeOffset]);
+	if (addHeaderSize)
+		programUncompressedSize += programHeaderSize;
 	programSectionUncompressed.resize(programUncompressedSize);
 	uncompress(&programSectionUncompressed[0], &programUncompressedSize, &programSectionCompressed[0], programCompressedSize);
 
@@ -239,13 +241,17 @@ Files GetFilesInDirectory(const std::string &path, const std::vector<std::string
 	dirent *entry;
 	Files files;
 
+	std::string finalPath = path;
+	if (finalPath[path.size() - 1] != '/')
+		finalPath += '/';
+
 	if ((dir = opendir(path.c_str())))
 		while ((entry = readdir(dir)))
 		{
 			std::string filename = std::string(entry->d_name);
 			if (filename == "." || filename == "..")
 				continue;
-			std::string fullPath = path + "/" + filename;
+			std::string fullPath = finalPath + filename;
 			// Although the following function is for checking if a directory
 			// exists, it can also be used to check if a path is a directory,
 			// saving a little bit of extra code
@@ -320,7 +326,7 @@ static Time GetTime(TimerPlayer *player, uint32_t loopCount, uint32_t numberOfLo
 // After which, it will store the data in the tags for the SSEQ.
 void GetTime(const std::string &filename, const SDAT *sdat, const SSEQ *sseq, TagList &tags, bool verbose, uint32_t numberOfLoops, uint32_t fadeLoop, uint32_t fadeOneShot)
 {
-	auto player = std::auto_ptr<TimerPlayer>(new TimerPlayer());
+	auto player = std::unique_ptr<TimerPlayer>(new TimerPlayer());
 	player->Setup(sseq);
 	player->maxSeconds = 6000;
 	// Get the time, without "playing" the notes

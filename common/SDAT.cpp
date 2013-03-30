@@ -1,7 +1,7 @@
 /*
  * SDAT - SDAT structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-29
+ * Last modification on 2013-03-30
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
@@ -11,6 +11,8 @@
 #include <iostream>
 #include "SDAT.h"
 
+bool SDAT::failOnMissingFiles = true;
+
 SDAT::SDAT() : filename(""), header(), SYMBOffset(0), SYMBSize(0), INFOOffset(0), INFOSize(0), FATOffset(0), FATSize(0), FILEOffset(0), FILESize(0), symbSection(),
 	infoSection(), fatSection(), symbSectionNeedsCleanup(false), count(0), SSEQs(), SBNKs(), SWARs()
 {
@@ -18,8 +20,84 @@ SDAT::SDAT() : filename(""), header(), SYMBOffset(0), SYMBSize(0), INFOOffset(0)
 	this->header.magic = 0x0100FEFF;
 }
 
-void SDAT::Read(const std::string &fn, PseudoReadFile &file)
+SDAT::SDAT(const SDAT &sdat) : filename(sdat.filename), header(sdat.header), SYMBOffset(sdat.SYMBOffset), SYMBSize(sdat.SYMBSize), INFOOffset(sdat.INFOOffset),
+	INFOSize(sdat.INFOSize), FATOffset(sdat.FATOffset), FATSize(sdat.FATSize), FILEOffset(sdat.FILEOffset), FILESize(sdat.FILESize), symbSection(sdat.symbSection),
+	infoSection(sdat.infoSection), fatSection(sdat.fatSection), symbSectionNeedsCleanup(sdat.symbSectionNeedsCleanup), count(sdat.count), SSEQs(), SBNKs(), SWARs()
 {
+	std::for_each(sdat.SSEQs.begin(), sdat.SSEQs.end(), [&](const std::unique_ptr<SSEQ> &sseq)
+	{
+		auto newSSEQ = std::unique_ptr<SSEQ>(new SSEQ(*sseq.get()));
+		newSSEQ->info = this->infoSection.SEQrecord.entries[sseq->entryNumber];
+		this->infoSection.SEQrecord.entries[sseq->entryNumber].sseq = newSSEQ.get();
+		this->SSEQs.push_back(std::move(newSSEQ));
+	});
+	std::for_each(sdat.SBNKs.begin(), sdat.SBNKs.end(), [&](const std::unique_ptr<SBNK> &sbnk)
+	{
+		auto newSBNK = std::unique_ptr<SBNK>(new SBNK(*sbnk.get()));
+		newSBNK->info = this->infoSection.BANKrecord.entries[sbnk->entryNumber];
+		this->infoSection.BANKrecord.entries[sbnk->entryNumber].sbnk = newSBNK.get();
+		this->SBNKs.push_back(std::move(newSBNK));
+	});
+	std::for_each(sdat.SWARs.begin(), sdat.SWARs.end(), [&](const std::unique_ptr<SWAR> &swar)
+	{
+		auto newSWAR = std::unique_ptr<SWAR>(new SWAR(*swar.get()));
+		newSWAR->info = this->infoSection.WAVEARCrecord.entries[swar->entryNumber];
+		this->infoSection.WAVEARCrecord.entries[swar->entryNumber].swar = newSWAR.get();
+		this->SWARs.push_back(std::move(newSWAR));
+	});
+}
+
+SDAT &SDAT::operator=(const SDAT &sdat)
+{
+	if (this != &sdat)
+	{
+		this->filename = sdat.filename;
+		this->header = sdat.header;
+		this->SYMBOffset = sdat.SYMBOffset;
+		this->SYMBSize = sdat.SYMBSize;
+		this->INFOOffset = sdat.INFOOffset;
+		this->INFOSize = sdat.INFOSize;
+		this->FATOffset = sdat.FATOffset;
+		this->FATSize = sdat.FATSize;
+		this->FILEOffset = sdat.FILEOffset;
+		this->FILESize = sdat.FILESize;
+
+		this->symbSection = sdat.symbSection;
+		this->infoSection = sdat.infoSection;
+		this->fatSection = sdat.fatSection;
+
+		this->symbSectionNeedsCleanup = sdat.symbSectionNeedsCleanup;
+		this->count = sdat.count;
+
+		std::for_each(sdat.SSEQs.begin(), sdat.SSEQs.end(), [&](const std::unique_ptr<SSEQ> &sseq)
+		{
+			auto newSSEQ = std::unique_ptr<SSEQ>(new SSEQ(*sseq.get()));
+			newSSEQ->info = this->infoSection.SEQrecord.entries[sseq->entryNumber];
+			this->infoSection.SEQrecord.entries[sseq->entryNumber].sseq = newSSEQ.get();
+			this->SSEQs.push_back(std::move(newSSEQ));
+		});
+		std::for_each(sdat.SBNKs.begin(), sdat.SBNKs.end(), [&](const std::unique_ptr<SBNK> &sbnk)
+		{
+			auto newSBNK = std::unique_ptr<SBNK>(new SBNK(*sbnk.get()));
+			newSBNK->info = this->infoSection.BANKrecord.entries[sbnk->entryNumber];
+			this->infoSection.BANKrecord.entries[sbnk->entryNumber].sbnk = newSBNK.get();
+			this->SBNKs.push_back(std::move(newSBNK));
+		});
+		std::for_each(sdat.SWARs.begin(), sdat.SWARs.end(), [&](const std::unique_ptr<SWAR> &swar)
+		{
+			auto newSWAR = std::unique_ptr<SWAR>(new SWAR(*swar.get()));
+			newSWAR->info = this->infoSection.WAVEARCrecord.entries[swar->entryNumber];
+			this->infoSection.WAVEARCrecord.entries[swar->entryNumber].swar = newSWAR.get();
+			this->SWARs.push_back(std::move(newSWAR));
+		});
+	}
+	return *this;
+}
+
+void SDAT::Read(const std::string &fn, PseudoReadFile &file, bool shouldFailOnMissingFiles)
+{
+	SDAT::failOnMissingFiles = true;
+
 	this->filename = fn;
 
 	// Read header
@@ -49,6 +127,8 @@ void SDAT::Read(const std::string &fn, PseudoReadFile &file)
 	if (this->infoSection.SEQrecord.entries.empty())
 		throw std::logic_error("No SSEQ records found in SDAT");
 
+	SDAT::failOnMissingFiles = shouldFailOnMissingFiles;
+
 	// Read files
 	for (size_t i = 0, entries = this->infoSection.SEQrecord.entries.size(); i < entries; ++i)
 	{
@@ -67,11 +147,12 @@ void SDAT::Read(const std::string &fn, PseudoReadFile &file)
 		this->infoSection.SEQrecord.entries[i].fileData.resize(this->fatSection.records[fileID].size, 0);
 		file.ReadLE(this->infoSection.SEQrecord.entries[i].fileData);
 		file.pos = this->fatSection.records[fileID].offset;
-		SSEQ *newSSEQ = new SSEQ(name, origName);
+		auto newSSEQ = std::unique_ptr<SSEQ>(new SSEQ(name, origName));
 		newSSEQ->info = this->infoSection.SEQrecord.entries[i];
+		newSSEQ->entryNumber = i;
 		newSSEQ->Read(file);
-		this->infoSection.SEQrecord.entries[i].sseq = newSSEQ;
-		this->SSEQs.push_back(newSSEQ);
+		this->infoSection.SEQrecord.entries[i].sseq = newSSEQ.get();
+		this->SSEQs.push_back(std::move(newSSEQ));
 	}
 	for (size_t i = 0, entries = this->infoSection.BANKrecord.entries.size(); i < entries; ++i)
 	{
@@ -87,11 +168,12 @@ void SDAT::Read(const std::string &fn, PseudoReadFile &file)
 		this->infoSection.BANKrecord.entries[i].fileData.resize(this->fatSection.records[fileID].size, 0);
 		file.ReadLE(this->infoSection.BANKrecord.entries[i].fileData);
 		file.pos = this->fatSection.records[fileID].offset;
-		SBNK *newSBNK = new SBNK(origName);
+		auto newSBNK = std::unique_ptr<SBNK>(new SBNK(origName));
 		newSBNK->info = this->infoSection.BANKrecord.entries[i];
+		newSBNK->entryNumber = i;
 		newSBNK->Read(file);
-		this->infoSection.BANKrecord.entries[i].sbnk = newSBNK;
-		this->SBNKs.push_back(newSBNK);
+		this->infoSection.BANKrecord.entries[i].sbnk = newSBNK.get();
+		this->SBNKs.push_back(std::move(newSBNK));
 	}
 	for (size_t i = 0, entries = this->infoSection.WAVEARCrecord.entries.size(); i < entries; ++i)
 	{
@@ -107,11 +189,12 @@ void SDAT::Read(const std::string &fn, PseudoReadFile &file)
 		this->infoSection.WAVEARCrecord.entries[i].fileData.resize(this->fatSection.records[fileID].size, 0);
 		file.ReadLE(this->infoSection.WAVEARCrecord.entries[i].fileData);
 		file.pos = this->fatSection.records[fileID].offset;
-		SWAR *newSWAR = new SWAR(origName);
+		auto newSWAR = std::unique_ptr<SWAR>(new SWAR(origName));
 		newSWAR->info = this->infoSection.WAVEARCrecord.entries[i];
+		newSWAR->entryNumber = i;
 		newSWAR->Read(file);
-		this->infoSection.WAVEARCrecord.entries[i].swar = newSWAR;
-		this->SWARs.push_back(newSWAR);
+		this->infoSection.WAVEARCrecord.entries[i].swar = newSWAR.get();
+		this->SWARs.push_back(std::move(newSWAR));
 	}
 }
 
@@ -154,13 +237,6 @@ void SDAT::Write(PseudoWrite &file) const
 		file.WriteLE(this->infoSection.BANKrecord.entries[i].fileData);
 	for (uint32_t i = 0; i < this->infoSection.WAVEARCrecord.count; ++i)
 		file.WriteLE(this->infoSection.WAVEARCrecord.entries[i].fileData);
-}
-
-SDAT::~SDAT()
-{
-	std::for_each(this->SSEQs.begin(), this->SSEQs.end(), [](SSEQ *sseq) { delete sseq; });
-	std::for_each(this->SBNKs.begin(), this->SBNKs.end(), [](SBNK *sseq) { delete sseq; });
-	std::for_each(this->SWARs.begin(), this->SWARs.end(), [](SWAR *sseq) { delete sseq; });
 }
 
 // Appends another SDAT to this one
@@ -211,10 +287,11 @@ SDAT &SDAT::operator+=(const SDAT &other)
 		this->infoSection.SEQrecord.entries[i].bank += origBANKcount;
 		if (other.infoSection.SEQrecord.entries[i - origSEQcount].sseq)
 		{
-			SSEQ *newSSEQ = new SSEQ(*other.infoSection.SEQrecord.entries[i - origSEQcount].sseq);
+			auto newSSEQ = std::unique_ptr<SSEQ>(new SSEQ(*other.infoSection.SEQrecord.entries[i - origSEQcount].sseq));
 			newSSEQ->info = this->infoSection.SEQrecord.entries[i];
-			this->infoSection.SEQrecord.entries[i].sseq = newSSEQ;
-			this->SSEQs.push_back(newSSEQ);
+			newSSEQ->entryNumber = i;
+			this->infoSection.SEQrecord.entries[i].sseq = newSSEQ.get();
+			this->SSEQs.push_back(std::move(newSSEQ));
 		}
 	}
 
@@ -232,10 +309,11 @@ SDAT &SDAT::operator+=(const SDAT &other)
 				this->infoSection.BANKrecord.entries[i].waveArc[j] += origWAVEARCcount;
 		if (other.infoSection.BANKrecord.entries[i - origBANKcount].sbnk)
 		{
-			SBNK *newSBNK = new SBNK(*other.infoSection.BANKrecord.entries[i - origBANKcount].sbnk);
+			auto newSBNK = std::unique_ptr<SBNK>(new SBNK(*other.infoSection.BANKrecord.entries[i - origBANKcount].sbnk));
 			newSBNK->info = this->infoSection.BANKrecord.entries[i];
-			this->infoSection.BANKrecord.entries[i].sbnk = newSBNK;
-			this->SBNKs.push_back(newSBNK);
+			newSBNK->entryNumber = i;
+			this->infoSection.BANKrecord.entries[i].sbnk = newSBNK.get();
+			this->SBNKs.push_back(std::move(newSBNK));
 		}
 	}
 
@@ -250,10 +328,11 @@ SDAT &SDAT::operator+=(const SDAT &other)
 		this->infoSection.WAVEARCrecord.entries[i].fileID += this->fatSection.count;
 		if (other.infoSection.WAVEARCrecord.entries[i - origWAVEARCcount].swar)
 		{
-			SWAR *newSWAR = new SWAR(*other.infoSection.WAVEARCrecord.entries[i - origWAVEARCcount].swar);
+			auto newSWAR = std::unique_ptr<SWAR>(new SWAR(*other.infoSection.WAVEARCrecord.entries[i - origWAVEARCcount].swar));
 			newSWAR->info = this->infoSection.WAVEARCrecord.entries[i];
-			this->infoSection.WAVEARCrecord.entries[i].swar = newSWAR;
-			this->SWARs.push_back(newSWAR);
+			newSWAR->entryNumber = i;
+			this->infoSection.WAVEARCrecord.entries[i].swar = newSWAR.get();
+			this->SWARs.push_back(std::move(newSWAR));
 		}
 	}
 
@@ -267,7 +346,7 @@ SDAT &SDAT::operator+=(const SDAT &other)
 	return *this;
 }
 
-typedef std::map<uint32_t, std::vector<uint32_t> > Duplicates;
+typedef std::map<uint32_t, std::vector<uint32_t>> Duplicates;
 
 // This is to find a value in a vector out of a map
 static struct FindInVector : std::binary_function<Duplicates::value_type, uint32_t, bool>
@@ -575,7 +654,7 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 	newInfoSection.WAVEARCrecord.entryOffsets.resize(newInfoSection.WAVEARCrecord.count);
 	newInfoSection.WAVEARCrecord.entries.resize(newInfoSection.WAVEARCrecord.count);
 
-	std::vector<SSEQ *> newSSEQs;
+	std::vector<std::unique_ptr<SSEQ>> newSSEQs;
 	uint16_t fileID = 0;
 	for (size_t i = 0, num = SSEQsToKeep.size(); i < num; ++i)
 	{
@@ -586,14 +665,17 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 		newInfoSection.SEQrecord.entries[i].fileID = fileID++;
 		uint16_t nonDupBank = GetNonDupNumber(newInfoSection.SEQrecord.entries[i].bank, duplicateSBNKs);
 		newInfoSection.SEQrecord.entries[i].bank = SBNKMove[nonDupBank];
-		auto sseq = std::find(this->SSEQs.begin(), this->SSEQs.end(), newInfoSection.SEQrecord.entries[i].sseq);
+		auto sseq = std::find_if(this->SSEQs.begin(), this->SSEQs.end(), [&](const std::unique_ptr<SSEQ> &thisSSEQ)
+		{
+			return thisSSEQ.get() == newInfoSection.SEQrecord.entries[i].sseq;
+		});
 		(*sseq)->info = newInfoSection.SEQrecord.entries[i];
-		newSSEQs.push_back(*sseq);
+		(*sseq)->entryNumber = i;
+		newSSEQs.push_back(std::move(*sseq));
 		this->SSEQs.erase(sseq);
 	}
-	std::for_each(this->SSEQs.begin(), this->SSEQs.end(), [](SSEQ *sseq) { delete sseq; });
 
-	std::vector<SBNK *> newSBNKs;
+	std::vector<std::unique_ptr<SBNK>> newSBNKs;
 	for (size_t i = 0, num = SBNKsToKeep.size(); i < num; ++i)
 	{
 		if (this->SYMBOffset)
@@ -609,14 +691,17 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 			uint16_t nonDupWaveArc = GetNonDupNumber(waveArc, duplicateSWARs);
 			newInfoSection.BANKrecord.entries[i].waveArc[j] = SWARMove[nonDupWaveArc];
 		}
-		auto sbnk = std::find(this->SBNKs.begin(), this->SBNKs.end(), newInfoSection.BANKrecord.entries[i].sbnk);
+		auto sbnk = std::find_if(this->SBNKs.begin(), this->SBNKs.end(), [&](const std::unique_ptr<SBNK> &thisSBNK)
+		{
+			return thisSBNK.get() == newInfoSection.BANKrecord.entries[i].sbnk;
+		});
 		(*sbnk)->info = newInfoSection.BANKrecord.entries[i];
-		newSBNKs.push_back(*sbnk);
+		(*sbnk)->entryNumber = i;
+		newSBNKs.push_back(std::move(*sbnk));
 		this->SBNKs.erase(sbnk);
 	}
-	std::for_each(this->SBNKs.begin(), this->SBNKs.end(), [](SBNK *sbnk) { delete sbnk; });
 
-	std::vector<SWAR *> newSWARs;
+	std::vector<std::unique_ptr<SWAR>> newSWARs;
 	for (size_t i = 0, num = SWARsToKeep.size(); i < num; ++i)
 	{
 		if (this->SYMBOffset)
@@ -624,20 +709,23 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 
 		newInfoSection.WAVEARCrecord.entries[i] = this->infoSection.WAVEARCrecord.entries[SWARsToKeep[i]];
 		newInfoSection.WAVEARCrecord.entries[i].fileID = fileID++;
-		auto swar = std::find(this->SWARs.begin(), this->SWARs.end(), newInfoSection.WAVEARCrecord.entries[i].swar);
+		auto swar = std::find_if(this->SWARs.begin(), this->SWARs.end(), [&](const std::unique_ptr<SWAR> &thisSWAR)
+		{
+			return thisSWAR.get() == newInfoSection.WAVEARCrecord.entries[i].swar;
+		});
 		(*swar)->info = newInfoSection.WAVEARCrecord.entries[i];
-		newSWARs.push_back(*swar);
+		(*swar)->entryNumber = i;
+		newSWARs.push_back(std::move(*swar));
 		this->SWARs.erase(swar);
 	}
-	std::for_each(this->SWARs.begin(), this->SWARs.end(), [](SWAR *swar) { delete swar; });
 
 	if (this->SYMBOffset)
 		this->symbSection = newSymbSection;
 	this->infoSection = newInfoSection;
 
-	this->SSEQs = newSSEQs;
-	this->SBNKs = newSBNKs;
-	this->SWARs = newSWARs;
+	this->SSEQs = std::move(newSSEQs);
+	this->SBNKs = std::move(newSBNKs);
+	this->SWARs = std::move(newSWARs);
 
 	FATSection newFatSection;
 
@@ -697,7 +785,10 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 			fileID = this->infoSection.SEQrecord.entries[i].fileID;
 			if (this->symbSection.SEQrecord.entries[i].empty())
 				this->symbSection.SEQrecord.entries[i] = "SSEQ" + NumToHexString(fileID).substr(2);
-			auto sseq = std::find(this->SSEQs.begin(), this->SSEQs.end(), this->infoSection.SEQrecord.entries[i].sseq);
+			auto sseq = std::find_if(this->SSEQs.begin(), this->SSEQs.end(), [&](const std::unique_ptr<SSEQ> &thisSSEQ)
+			{
+				return thisSSEQ.get() == this->infoSection.SEQrecord.entries[i].sseq;
+			});
 			if (sseq != this->SSEQs.end())
 			{
 				(*sseq)->origFilename = this->symbSection.SEQrecord.entries[i];

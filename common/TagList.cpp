@@ -1,7 +1,7 @@
 /*
  * xSF Tag List
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2013-03-30
  *
  * Storage of tags from PSF-style files, specifications found at
  * http://wiki.neillcorlett.com/PSFTagFormat
@@ -23,6 +23,11 @@ auto TagList::GetTags() const -> TagsList
 	for (auto curr = this->tagsOrder.begin(), end = this->tagsOrder.end(); curr != end; ++curr)
 		allTags.push_back(*curr + "=" + this->tags.find(*curr)->second);
 	return allTags;
+}
+
+bool TagList::Empty() const
+{
+	return this->tags.empty();
 }
 
 bool TagList::Exists(const std::string &name) const
@@ -47,6 +52,11 @@ std::string &TagList::operator[](const std::string &name)
 		this->tags[name] = "";
 	}
 	return this->tags[name];
+}
+
+void TagList::CopyOverwriteExistingOnly(const TagList &copy)
+{
+	std::for_each(copy.tagsOrder.begin(), copy.tagsOrder.end(), [&](const std::string &tag) { (*this)[tag] = copy[tag]; });
 }
 
 void TagList::Remove(const std::string &name)

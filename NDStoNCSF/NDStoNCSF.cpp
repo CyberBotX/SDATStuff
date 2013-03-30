@@ -1,7 +1,7 @@
 /*
  * NDS to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-29
+ * Last modification on 2013-03-30
  *
  * Version history:
  *   v1.0 - 2013-03-25 - Initial version
@@ -11,7 +11,7 @@
  *                     - Corrected handling of files within an existing SDAT.
  *   v1.2 - 2013-03-28 - Made timing to be on by default, with 2 loops.
  *                     - Added options to change the fade times.
- *   v1.3 - 2013-03-29 - Only remove files from the destination directory that
+ *   v1.3 - 2013-03-30 - Only remove files from the destination directory that
  *                       were created by this utility, instead of all files.
  *                     - Slightly better file checking when copying from an
  *                       existing SDAT, will check by data only if checking by
@@ -106,14 +106,8 @@ int main(int argc, char *argv[])
 		if (!FileExists(ndsFilename))
 			throw std::runtime_error("File " + ndsFilename + " does not exist.");
 
-		std::ifstream file;
-		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-		file.open(ndsFilename.c_str(), std::ifstream::in | std::ifstream::binary);
-
-		PseudoReadFile fileData((ndsFilename));
-		fileData.GetDataFromFile(file);
-
-		file.close();
+		PseudoReadFile fileData;
+		fileData.GetDataFromFile(ndsFilename);
 
 		// Setup the output directory, making sure it is clear beforehand (if it
 		// exists and we aren't being told not to copy the old data, then we'll
@@ -136,18 +130,14 @@ int main(int argc, char *argv[])
 				{
 					try
 					{
-						std::ifstream ncsfFile;
-						ncsfFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-						ncsfFile.open(curr->c_str(), std::ifstream::in | std::ifstream::binary);
-
-						PseudoReadFile ncsfFileData((*curr));
-						ncsfFileData.GetDataFromFile(ncsfFile);
-
-						ncsfFile.close();
+						PseudoReadFile ncsfFileData;
+						ncsfFileData.GetDataFromFile(*curr);
 
 						if (curr->rfind(".ncsf") != std::string::npos || curr->rfind(".ncsflib") != std::string::npos)
 						{
 							auto sdatVector = GetProgramSectionFromPSF(ncsfFileData, 0x25, 12, 8);
+							if (sdatVector.empty())
+								throw std::runtime_error("Program section for " + *curr + " was empty.");
 
 							PseudoReadFile sdatFileData((*curr));
 							sdatFileData.GetDataFromVector(sdatVector.begin(), sdatVector.end());
@@ -205,10 +195,9 @@ int main(int argc, char *argv[])
 		{
 			try
 			{
-				PseudoReadFile sdatFile;
-				sdatFile.GetDataFromVector(fileData.data->begin() + sdatOffset, fileData.data->end());
+				fileData.pos = sdatOffset;
 				SDAT sdat;
-				sdat.Read(stringify(sdatNumber++ + 1), sdatFile);
+				sdat.Read(stringify(sdatNumber++ + 1), fileData);
 				finalSDAT += sdat;
 				if (options[VERBOSE])
 					std::cout << "Found SDAT with " << sdat.infoSection.SEQrecord.actualCount << " SSEQ" << (sdat.infoSection.SEQrecord.actualCount == 1 ? "" : "s") << ".\n";

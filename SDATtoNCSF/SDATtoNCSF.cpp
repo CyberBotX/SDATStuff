@@ -1,7 +1,7 @@
 /*
  * SDAT to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-28
+ * Last modification on 2013-03-30
  *
  * NOTE: This version has been superceded by NDS to NCSF instead.  It also lacks
  *       some of the features that are in NDS to NCSF.
@@ -72,14 +72,8 @@ int main(int argc, char *argv[])
 		if (!FileExists(sdatFilename))
 			throw std::runtime_error("File " + sdatFilename + " does not exist.");
 
-		std::ifstream file;
-		file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-		file.open(sdatFilename.c_str(), std::ifstream::in | std::ifstream::binary);
-
-		PseudoReadFile fileData((sdatFilename));
-		fileData.GetDataFromFile(file);
-
-		file.close();
+		PseudoReadFile fileData;
+		fileData.GetDataFromFile(sdatFilename);
 
 		// Create output directory
 		std::string dirName = sdatFilename;

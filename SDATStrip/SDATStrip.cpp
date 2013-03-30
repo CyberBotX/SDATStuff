@@ -1,7 +1,7 @@
 /*
  * SDAT Strip
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-29
+ * Last modification on 2013-03-30
  *
  * NOTE: This version has been superceded by NDS to NCSF instead.
  *
@@ -93,14 +93,8 @@ int main(int argc, char *argv[])
 			if (!FileExists(inputFilenames[i]))
 				throw std::runtime_error("File does not exist.");
 
-			std::ifstream file;
-			file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-			file.open(inputFilenames[i].c_str(), std::ifstream::in | std::ifstream::binary);
-
-			PseudoReadFile fileData((inputFilenames[i]));
-			fileData.GetDataFromFile(file);
-
-			file.close();
+			PseudoReadFile fileData;
+			fileData.GetDataFromFile(inputFilenames[i]);
 
 			SDAT sdat;
 			sdat.Read(inputFilenames[i], fileData);

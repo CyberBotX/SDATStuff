@@ -1,7 +1,7 @@
 /*
  * SDAT - Timer Player structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2013-03-30
  *
  * Adapted from source code of FeOS Sound System
  * By fincs
@@ -41,8 +41,7 @@ void TimerPlayer::Setup(const SSEQ *sseqToPlay)
 		{
 			++file.pos;
 			file.ReadLE<uint8_t>();
-			PseudoReadFile trackFile((this->sseq->info.origFilename));
-			trackFile.GetDataFromVector(this->sseq->data.begin(), this->sseq->data.end());
+			PseudoReadFile trackFile = file;
 			trackFile.pos = file.Read24();
 			int newTrack = this->nTracks++;
 			this->tracks[newTrack].Init(newTrack, this, trackFile);

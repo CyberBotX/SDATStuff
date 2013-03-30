@@ -17,7 +17,7 @@ PROG_SUFFIX=
 OBJ_SUFFIX=	.o
 DEP_SUFFIX=	.d
 
-CPPFLAGS+=	-Icommon
+CPPFLAGS+=	-std=c++0x -Icommon
 CXXFLAGS+=	-std=c++0x -pipe -pedantic -Wall -Wctor-dtor-privacy -Wold-style-cast -Wextra -Wno-div-by-zero -Wfloat-equal -Wshadow -Wno-long-long -Icommon
 LDFLAGS+=	-lz -pthread
 
