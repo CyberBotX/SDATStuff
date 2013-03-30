@@ -170,21 +170,6 @@ int main(int argc, char *argv[])
 		});
 		if (twoSF != twoSFs.end())
 		{
-			if (!!options[VERBOSE])
-				std::cout << "Copying tags from " << twoSF->first << "\n  to " << ncsf.first << "\n";
-
-			TagList twoSFTags = std::get<2>(twoSF->second);
-			twoSFTags.Remove("_lib");
-			twoSFTags.Remove("2sfby");
-			twoSFTags.Remove("length");
-			twoSFTags.Remove("fade");
-			std::for_each(tagsToExclude.begin(), tagsToExclude.end(), [&](const std::string &tag) { twoSFTags.Remove(tag); });
-
-			TagList ncsfTags = ncsf.second.second;
-			ncsfTags.CopyOverwriteExistingOnly(twoSFTags);
-
-			auto reservedData = IntToLEVector<uint32_t>(SSEQNumber);
-
 			std::string filename = ncsf.first;
 			if (!!options[RENAME])
 			{
@@ -198,6 +183,21 @@ int main(int argc, char *argv[])
 				filename = NCSFDirectory + filename;
 				remove(ncsf.first.c_str());
 			}
+			if (!!options[VERBOSE])
+				std::cout << "Copying tags from " << twoSF->first << "\n  to " << filename << "\n";
+
+			TagList twoSFTags = std::get<2>(twoSF->second);
+			twoSFTags.Remove("_lib");
+			twoSFTags.Remove("2sfby");
+			twoSFTags.Remove("length");
+			twoSFTags.Remove("fade");
+			std::for_each(tagsToExclude.begin(), tagsToExclude.end(), [&](const std::string &tag) { twoSFTags.Remove(tag); });
+
+			TagList ncsfTags = ncsf.second.second;
+			ncsfTags.CopyOverwriteExistingOnly(twoSFTags);
+
+			auto reservedData = IntToLEVector<uint32_t>(SSEQNumber);
+
 			MakeNCSF(filename, reservedData, std::vector<uint8_t>(), ncsfTags.GetTags());
 		}
 	});
