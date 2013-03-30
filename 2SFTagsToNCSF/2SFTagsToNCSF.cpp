@@ -5,14 +5,15 @@
  *
  * Version history:
  *   v1.0 - 2013-03-30 - Initial version
+ *   v1.1 - 2012-03-30 - Added option to rename the NCSFs, requested by Knurek.
  */
 
 #include <tuple>
 #include "NCSF.h"
 
-static const std::string TWOSFTAGSTONCSF_VERSION = "1.0";
+static const std::string TWOSFTAGSTONCSF_VERSION = "1.1";
 
-enum { UNKNOWN, HELP, VERBOSE, EXCLUDETAG };
+enum { UNKNOWN, HELP, VERBOSE, EXCLUDETAG, RENAME };
 const option::Descriptor opts[] =
 {
 	option::Descriptor(UNKNOWN, 0, "", "", option::Arg::None, "2SF Tags to NCSF v" + TWOSFTAGSTONCSF_VERSION + "\nBy Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]\n\n"
@@ -23,6 +24,7 @@ const option::Descriptor opts[] =
 	option::Descriptor(HELP, 0, "h", "help", option::Arg::None, "  --help,-h \tPrint usage and exit."),
 	option::Descriptor(VERBOSE, 0, "v", "verbose", option::Arg::None, "  --verbose,-v \tVerbose output."),
 	option::Descriptor(EXCLUDETAG, 0, "x", "exclude", RequireArgument, "  --exclude=<tag> \v         -x <tag> \tExclude the given tag from the tags to copy."),
+	option::Descriptor(RENAME, 0, "r", "rename", option::Arg::None, "  --rename,-r \tRenames the NCSFs to match the 2SFs."),
 	option::Descriptor(UNKNOWN, 0, "", "", option::Arg::None, "\nVerbose output will output the tags that were copied."),
 	option::Descriptor()
 };
@@ -182,6 +184,13 @@ int main(int argc, char *argv[])
 			ncsfTags.CopyOverwriteExistingOnly(twoSFTags);
 
 			auto reservedData = IntToLEVector<uint32_t>(SSEQNumber);
+
+			std::string filename = ncsf.first;
+			if (!!options[RENAME])
+			{
+				auto dot = twoSF->first.rfind('.');
+				filename = twoSF->first.substr(0, dot) + ".minincsf";
+			}
 			MakeNCSF(ncsf.first, reservedData, std::vector<uint8_t>(), ncsfTags.GetTags());
 		}
 	});

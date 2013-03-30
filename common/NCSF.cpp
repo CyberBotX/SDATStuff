@@ -246,6 +246,7 @@ Files GetFilesInDirectory(const std::string &path, const std::vector<std::string
 		finalPath += '/';
 
 	if ((dir = opendir(path.c_str())))
+	{
 		while ((entry = readdir(dir)))
 		{
 			std::string filename = std::string(entry->d_name);
@@ -266,8 +267,8 @@ Files GetFilesInDirectory(const std::string &path, const std::vector<std::string
 			if (extensions.empty() || extensionMatch != extensions.end())
 				files.push_back(fullPath);
 		}
-
-	closedir(dir);
+		closedir(dir);
+	}
 
 	return files;
 }
