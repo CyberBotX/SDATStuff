@@ -190,8 +190,15 @@ int main(int argc, char *argv[])
 			{
 				auto dot = twoSF->first.rfind('.');
 				filename = twoSF->first.substr(0, dot) + ".minincsf";
+				filename = filename.substr(twoSFDirectory.size());
+				if (twoSFDirectory[twoSFDirectory.size() - 1] != '/')
+					filename.erase(0);
+				if (NCSFDirectory[NCSFDirectory.size() - 1] != '/')
+					filename = "/" + filename;
+				filename = NCSFDirectory + filename;
+				remove(ncsf.first.c_str());
 			}
-			MakeNCSF(ncsf.first, reservedData, std::vector<uint8_t>(), ncsfTags.GetTags());
+			MakeNCSF(filename, reservedData, std::vector<uint8_t>(), ncsfTags.GetTags());
 		}
 	});
 
