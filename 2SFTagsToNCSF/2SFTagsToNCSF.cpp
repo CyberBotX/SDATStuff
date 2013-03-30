@@ -10,7 +10,7 @@
 #include <tuple>
 #include "NCSF.h"
 
-static const std::string TWOSFTAGSTONCSF_VERSION = "1.2";
+static const std::string TWOSFTAGSTONCSF_VERSION = "1.0";
 
 enum { UNKNOWN, HELP, VERBOSE, EXCLUDETAG };
 const option::Descriptor opts[] =
