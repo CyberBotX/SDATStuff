@@ -36,7 +36,7 @@ std::string INFOEntry::FullFilename(bool multipleSDATs) const
 	return filename;
 }
 
-INFOEntrySEQ::INFOEntrySEQ() : INFOEntry(), fileID(0), unknown(0), bank(0), vol(0), cpr(0), ppr(0), ply(0), sseq(NULL)
+INFOEntrySEQ::INFOEntrySEQ() : INFOEntry(), fileID(0), unknown(0), bank(0), vol(0), cpr(0), ppr(0), ply(0), sseq(nullptr)
 {
 	memset(this->unknown2, 0, sizeof(this->unknown2));
 }
@@ -94,7 +94,7 @@ void INFOEntrySEQ::Write(PseudoWrite &file) const
 	file.WriteLE(this->unknown2);
 }
 
-INFOEntryBANK::INFOEntryBANK() : INFOEntry(), fileID(0), unknown(0), sbnk(NULL)
+INFOEntryBANK::INFOEntryBANK() : INFOEntry(), fileID(0), unknown(0), sbnk(nullptr)
 {
 	memset(this->waveArc, 0, sizeof(this->waveArc));
 }
@@ -136,7 +136,7 @@ void INFOEntryBANK::Write(PseudoWrite &file) const
 	file.WriteLE(this->waveArc);
 }
 
-INFOEntryWAVEARC::INFOEntryWAVEARC() : INFOEntry(), fileID(0), unknown(0), swar(NULL)
+INFOEntryWAVEARC::INFOEntryWAVEARC() : INFOEntry(), fileID(0), unknown(0), swar(nullptr)
 {
 }
 

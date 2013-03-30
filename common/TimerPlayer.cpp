@@ -12,9 +12,10 @@
 
 #include "TimerPlayer.h"
 
-TimerPlayer::TimerPlayer() : prio(0), nTracks(0), tempo(120), tempoCount(0), tempoRate(0x100), masterVol(0), trailingSilenceSeconds(0), sseq(NULL), sbnk(NULL), seconds(0),
+TimerPlayer::TimerPlayer() : prio(0), nTracks(0), tempo(120), tempoCount(0), tempoRate(0x100), masterVol(0), trailingSilenceSeconds(0), sseq(nullptr), sbnk(nullptr),
+	seconds(0),
 #ifdef _WIN32
-	mutex(CreateMutex(NULL, false, NULL)), thread(NULL),
+	mutex(CreateMutex(nullptr, false, nullptr)), thread(nullptr),
 #else
 	mutex(PTHREAD_MUTEX_INITIALIZER), thread(0),
 #endif
@@ -286,7 +287,7 @@ void *TimerPlayer::GetLengthThread(void *handle)
 #ifdef _WIN32
 	return 0;
 #else
-	return NULL;
+	return nullptr;
 #endif
 }
 
@@ -295,9 +296,9 @@ void TimerPlayer::StartLengthThread()
 	this->doLength = true;
 #ifdef _WIN32
 	DWORD threadID;
-	this->thread = CreateThread(NULL, 0, TimerPlayer::GetLengthThread, this, 0, &threadID);
+	this->thread = CreateThread(nullptr, 0, TimerPlayer::GetLengthThread, this, 0, &threadID);
 #else
-	pthread_create(&this->thread, NULL, TimerPlayer::GetLengthThread, this);
+	pthread_create(&this->thread, nullptr, TimerPlayer::GetLengthThread, this);
 #endif
 }
 
@@ -306,6 +307,6 @@ void TimerPlayer::WaitForThread()
 #ifdef _WIN32
 	WaitForSingleObject(this->thread, INFINITE);
 #else
-	pthread_join(this->thread, NULL);
+	pthread_join(this->thread, nullptr);
 #endif
 }

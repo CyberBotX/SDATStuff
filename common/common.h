@@ -468,7 +468,7 @@ inline bool WildcardCompare(const std::string &tameText, const std::string &wild
 
 	const char *str = tameText.c_str();
 	const char *pattern = wildText.c_str();
-	const char *q = NULL;
+	const char *q = nullptr;
 	State state = Exact;
 
 	bool match = true;

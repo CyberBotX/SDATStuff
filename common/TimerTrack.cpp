@@ -36,7 +36,7 @@ static inline int Cnv_Fall(int fall)
 		return (0x1E00 / (0x7E - fall)) & 0xFFFF;
 }
 
-TimerTrack::TimerTrack() : trackId(-1), state(), prio(0), ply(NULL), startPos(0), file(), stackPos(0), wait(0), patch(0), portaKey(0), portaTime(0), sweepPitch(0), vol(0),
+TimerTrack::TimerTrack() : trackId(-1), state(), prio(0), ply(nullptr), startPos(0), file(), stackPos(0), wait(0), patch(0), portaKey(0), portaTime(0), sweepPitch(0), vol(0),
 	expr(0), pan(0), pitchBendRange(0), pitchBend(0), transpose(0), a(0), d(0), s(0), r(0), modType(0), modSpeed(0), modDepth(0), modRange(0), modDelay(0), updateFlags(),
 	hitLoop(false), hitEnd(false)
 {
@@ -95,7 +95,7 @@ int TimerTrack::NoteOn(int key, int vel, int len)
 	int nCh;
 
 	auto &instrument = sbnk->instruments[this->patch];
-	const SBNKInstrumentRange *noteDef = NULL;
+	const SBNKInstrumentRange *noteDef = nullptr;
 	int fRecord = instrument.record;
 
 	if (fRecord == 16)
