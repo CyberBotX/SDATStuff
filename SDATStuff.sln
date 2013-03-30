@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "common", "common\common.vcxproj", "{51D9DA16-25BB-43CD-B340-934B5CF8E5F2}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SDATStrip", "SDATStrip\SDATStrip.vcxproj", "{642DA5E2-87BC-468D-8148-45F3C1757FF3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SDATtoNCSF", "SDATtoNCSF\SDATtoNCSF.vcxproj", "{480AAF0F-0749-4C3D-A6DE-3CF632AB1B0B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NDStoNCSF", "NDStoNCSF\NDStoNCSF.vcxproj", "{22504693-3E5E-4595-A3A0-34CB82F66495}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "2SFTagsToNCSF", "2SFTagsToNCSF\2SFTagsToNCSF.vcxproj", "{D09C8931-0A54-4328-8093-4B083C36860C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{51D9DA16-25BB-43CD-B340-934B5CF8E5F2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{51D9DA16-25BB-43CD-B340-934B5CF8E5F2}.Debug|Win32.Build.0 = Debug|Win32
+		{51D9DA16-25BB-43CD-B340-934B5CF8E5F2}.Release|Win32.ActiveCfg = Release|Win32
+		{51D9DA16-25BB-43CD-B340-934B5CF8E5F2}.Release|Win32.Build.0 = Release|Win32
+		{642DA5E2-87BC-468D-8148-45F3C1757FF3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{642DA5E2-87BC-468D-8148-45F3C1757FF3}.Debug|Win32.Build.0 = Debug|Win32
+		{642DA5E2-87BC-468D-8148-45F3C1757FF3}.Release|Win32.ActiveCfg = Release|Win32
+		{642DA5E2-87BC-468D-8148-45F3C1757FF3}.Release|Win32.Build.0 = Release|Win32
+		{480AAF0F-0749-4C3D-A6DE-3CF632AB1B0B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{480AAF0F-0749-4C3D-A6DE-3CF632AB1B0B}.Debug|Win32.Build.0 = Debug|Win32
+		{480AAF0F-0749-4C3D-A6DE-3CF632AB1B0B}.Release|Win32.ActiveCfg = Release|Win32
+		{480AAF0F-0749-4C3D-A6DE-3CF632AB1B0B}.Release|Win32.Build.0 = Release|Win32
+		{22504693-3E5E-4595-A3A0-34CB82F66495}.Debug|Win32.ActiveCfg = Debug|Win32
+		{22504693-3E5E-4595-A3A0-34CB82F66495}.Debug|Win32.Build.0 = Debug|Win32
+		{22504693-3E5E-4595-A3A0-34CB82F66495}.Release|Win32.ActiveCfg = Release|Win32
+		{22504693-3E5E-4595-A3A0-34CB82F66495}.Release|Win32.Build.0 = Release|Win32
+		{D09C8931-0A54-4328-8093-4B083C36860C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D09C8931-0A54-4328-8093-4B083C36860C}.Debug|Win32.Build.0 = Debug|Win32
+		{D09C8931-0A54-4328-8093-4B083C36860C}.Release|Win32.ActiveCfg = Release|Win32
+		{D09C8931-0A54-4328-8093-4B083C36860C}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
