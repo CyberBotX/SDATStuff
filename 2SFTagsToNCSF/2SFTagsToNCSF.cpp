@@ -1,11 +1,13 @@
 /*
  * 2SF Tags to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-30
+ * Last modification on 2013-04-10
  *
  * Version history:
  *   v1.0 - 2013-03-30 - Initial version
  *   v1.1 - 2012-03-30 - Added option to rename the NCSFs, requested by Knurek.
+ *   v1.2 - 2012-04-10 - Made it so a file is not overwritten when renaming if
+ *                       a duplicate is found.
  */
 
 #include <tuple>
@@ -174,13 +176,24 @@ int main(int argc, char *argv[])
 			if (!!options[RENAME])
 			{
 				auto dot = twoSF->first.rfind('.');
-				filename = twoSF->first.substr(0, dot) + ".minincsf";
+				filename = twoSF->first.substr(0, dot);
 				filename = filename.substr(twoSFDirectory.size());
 				if (twoSFDirectory[twoSFDirectory.size() - 1] != '/')
 					filename.erase(0);
 				if (NCSFDirectory[NCSFDirectory.size() - 1] != '/')
 					filename = "/" + filename;
 				filename = NCSFDirectory + filename;
+				if (FileExists(filename + ".minincsf"))
+					for (unsigned i = 1; ; ++i)
+					{
+						std::string istr = stringify(i);
+						if (!FileExists(filename + "_Duplicate" + istr + ".minincsf"))
+						{
+							filename += "_Duplicate" + istr;
+							break;
+						}
+					}
+				filename += ".minincsf";
 				remove(ncsf.first.c_str());
 			}
 			if (!!options[VERBOSE])
