@@ -18,7 +18,7 @@
 #include <iostream>
 #include <cstring>
 #include <cctype>
-#include "pstdint.h"
+#include <cstdint>
 #include <sys/stat.h>
 #ifdef _WIN32
 # include <direct.h>
