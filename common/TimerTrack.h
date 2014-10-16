@@ -1,7 +1,7 @@
 /*
  * SDAT - Timer Track
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2014-10-15
  *
  * Adapted from source code of FeOS Sound System
  * By fincs
@@ -10,9 +10,9 @@
  * This has been modified in order to be able to provide timing for an SSEQ.
  */
 
-#ifndef SDAT_TIMERTRACK_H
-#define SDAT_TIMERTRACK_H
+#pragma once
 
+#include <functional>
 #include <bitset>
 #include "common.h"
 
@@ -24,6 +24,40 @@ enum { TUF_VOL, TUF_PAN, TUF_TIMER, TUF_MOD, TUF_LEN, TUF_BITS };
 
 struct TimerPlayer;
 
+enum StackType
+{
+	STACKTYPE_CALL,
+	STACKTYPE_LOOP
+};
+
+struct StackValue
+{
+	StackType type;
+	uint32_t destPos;
+
+	StackValue() : type(STACKTYPE_CALL), destPos(0) { }
+	StackValue(StackType newType, uint32_t newDestPos) : type(newType), destPos(newDestPos) { }
+};
+
+struct Override
+{
+	bool overriding;
+	int cmd;
+	int value;
+	int extraValue;
+
+	Override() : overriding(false) { }
+	bool operator()() const { return this->overriding; }
+	bool &operator()() { return this->overriding; }
+	int val(std::function<int ()> reader, bool returnExtra = false)
+	{
+		if (this->overriding)
+			return returnExtra ? this->extraValue : this->value;
+		else
+			return reader();
+	}
+};
+
 struct TimerTrack
 {
 	int8_t trackId;
@@ -34,8 +68,10 @@ struct TimerTrack
 
 	uint32_t startPos;
 	PseudoReadFile file;
-	uint32_t stack[TRACKSTACKSIZE];
+	StackValue stack[TRACKSTACKSIZE];
 	uint8_t stackPos, loopCount[TRACKSTACKSIZE];
+	Override overriding;
+	bool lastComparisonResult;
 
 	int wait;
 	uint16_t patch;
@@ -63,6 +99,11 @@ struct TimerTrack
 	int NoteOnTie(int key, int vel);
 	void ReleaseAllNotes();
 	void Run();
-};
 
-#endif
+	int Read8();
+	int Read16();
+	int Read24();
+	int ReadVL();
+
+	std::function<int ()> read8, read16, read24, readvl;
+};

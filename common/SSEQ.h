@@ -1,14 +1,13 @@
 /*
  * SDAT - SSEQ (Sequence) structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-30
+ * Last modification on 2014-10-15
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
  */
 
-#ifndef SDAT_SSEQ_H
-#define SDAT_SSEQ_H
+#pragma once
 
 #include "INFOEntry.h"
 #include "common.h"
@@ -27,5 +26,3 @@ struct SSEQ
 
 	void Read(PseudoReadFile &file);
 };
-
-#endif

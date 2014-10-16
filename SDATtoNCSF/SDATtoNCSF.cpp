@@ -1,7 +1,7 @@
 /*
  * SDAT to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-30
+ * Last modification on 2014-10-15
  *
  * NOTE: This version has been superceded by NDS to NCSF instead.  It also lacks
  *       some of the features that are in NDS to NCSF.
@@ -10,11 +10,13 @@
  *   v1.0 - 2013-03-25 - Initial version
  *   v1.1 - 2013-03-28 - Made timing to be on by default, with 2 loops.
  *                     - Added options to change the fade times.
+ *   v1.2 - 2014-10-15 - Improved timing system by implementing the random,
+ *                       variable, and conditional SSEQ commands.
  */
 
 #include "NCSF.h"
 
-static const std::string SDATTONCSF_VERSION = "1.1";
+static const std::string SDATTONCSF_VERSION = "1.2";
 
 enum { UNKNOWN, HELP, VERBOSE, TIME, FADELOOP, FADEONESHOT };
 const option::Descriptor opts[] =
@@ -40,9 +42,9 @@ int main(int argc, char *argv[])
 	// Options parsing
 	argc -= argc > 0;
 	argv += argc > 0;
-	option::Stats stats((opts), (argc), (argv));
-	std::vector<option::Option> options((stats.options_max)), buffer((stats.buffer_max));
-	option::Parser parse((opts), (argc), (argv), (&options[0]), (&buffer[0]));
+	option::Stats stats(opts, argc, argv);
+	std::vector<option::Option> options(stats.options_max), buffer(stats.buffer_max);
+	option::Parser parse(opts, argc, argv, &options[0], &buffer[0]);
 
 	if (parse.error())
 		return 1;

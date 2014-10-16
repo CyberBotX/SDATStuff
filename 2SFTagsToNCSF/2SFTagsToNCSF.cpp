@@ -1,7 +1,7 @@
 /*
  * 2SF Tags to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-04-10
+ * Last modification on 2014-10-15
  *
  * Version history:
  *   v1.0 - 2013-03-30 - Initial version
@@ -13,7 +13,7 @@
 #include <tuple>
 #include "NCSF.h"
 
-static const std::string TWOSFTAGSTONCSF_VERSION = "1.1";
+static const std::string TWOSFTAGSTONCSF_VERSION = "1.2";
 
 enum { UNKNOWN, HELP, VERBOSE, EXCLUDETAG, RENAME };
 const option::Descriptor opts[] =
@@ -39,9 +39,9 @@ int main(int argc, char *argv[])
 	// Options parsing
 	argc -= argc > 0;
 	argv += argc > 0;
-	option::Stats stats((opts), (argc), (argv));
-	std::vector<option::Option> options((stats.options_max)), buffer((stats.buffer_max));
-	option::Parser parse((opts), (argc), (argv), (&options[0]), (&buffer[0]));
+	option::Stats stats(opts, argc, argv);
+	std::vector<option::Option> options(stats.options_max), buffer(stats.buffer_max);
+	option::Parser parse(opts, argc, argv, &options[0], &buffer[0]);
 
 	if (parse.error())
 		return 1;
@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
-				PseudoReadFile romFileData((filename));
+				PseudoReadFile romFileData(filename);
 				romFileData.GetDataFromVector(programSection.begin() + 8, programSection.end());
 
 				uint8_t sdatSignature[] = { 0x53, 0x44, 0x41, 0x54, 0xFF, 0xFE, 0x00, 0x01 };
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 			// Otherwise it is either an ncsf or an ncsflib
 			else
 			{
-				PseudoReadFile sdatFileData((filename));
+				PseudoReadFile sdatFileData(filename);
 				sdatFileData.GetDataFromVector(programSection.begin(), programSection.end());
 
 				ncsfSDAT.Read(filename, sdatFileData);

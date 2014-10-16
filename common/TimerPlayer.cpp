@@ -1,7 +1,7 @@
 /*
  * SDAT - Timer Player structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-30
+ * Last modification on 2014-10-15
  *
  * Adapted from source code of FeOS Sound System
  * By fincs
@@ -11,6 +11,9 @@
  */
 
 #include "TimerPlayer.h"
+
+#undef min
+#undef max
 
 TimerPlayer::TimerPlayer() : prio(0), nTracks(0), tempo(120), tempoCount(0), tempoRate(0x100), masterVol(0), trailingSilenceSeconds(0), sseq(nullptr), sbnk(nullptr),
 	seconds(0),
@@ -24,29 +27,19 @@ TimerPlayer::TimerPlayer() : prio(0), nTracks(0), tempo(120), tempoCount(0), tem
 	memset(this->swar, 0, sizeof(this->swar));
 	for (int i = 0; i < 16; ++i)
 		this->channels[i].chnId = i;
+	memset(this->variables, -1, sizeof(this->variables));
 }
 
 void TimerPlayer::Setup(const SSEQ *sseqToPlay)
 {
 	this->sseq = sseqToPlay;
 
-	PseudoReadFile file((this->sseq->info.origFilename));
+	PseudoReadFile file(this->sseq->info.origFilename);
 	file.GetDataFromVector(this->sseq->data.begin(), this->sseq->data.end());
 
 	this->tracks[0].Init(0, this, file);
 
 	this->nTracks = 1;
-
-	if ((*file.data)[0] == 0xFE)
-		for (file.pos += 3; (*file.data)[file.pos] == 0x93; )
-		{
-			++file.pos;
-			file.ReadLE<uint8_t>();
-			PseudoReadFile trackFile = file;
-			trackFile.pos = file.Read24();
-			int newTrack = this->nTracks++;
-			this->tracks[newTrack].Init(newTrack, this, trackFile);
-		}
 
 	this->tracks[0].file = file;
 	this->tracks[0].startPos = file.pos;
@@ -171,14 +164,6 @@ void TimerPlayer::UnlockMutex()
 #endif
 }
 
-template<typename T1, typename T2> static inline void clamp(T1 &valueToClamp, const T2 &minValue, const T2 &maxValue)
-{
-	if (valueToClamp < minValue)
-		valueToClamp = minValue;
-	else if (valueToClamp > maxValue)
-		valueToClamp = maxValue;
-}
-
 static inline int32_t muldiv7(int32_t val, uint8_t mul)
 {
 	return mul == 127 ? val : (val * mul) >> 7;
@@ -228,8 +213,8 @@ void TimerPlayer::GetLength()
 				leftChannel = muldiv7(leftChannel, 127 - this->masterVol);
 				rightChannel = muldiv7(rightChannel, 127 - this->masterVol);
 
-				clamp(leftChannel, -0x8000, 0x7FFF);
-				clamp(rightChannel, -0x8000, 0x7FFF);
+				clamp(leftChannel, std::numeric_limits<int16_t>::min(), std::numeric_limits<int16_t>::max());
+				clamp(rightChannel, std::numeric_limits<int16_t>::min(), std::numeric_limits<int16_t>::max());
 
 				if (!leftChannel && !rightChannel)
 					this->trailingSilenceSeconds += SecondsPerClockCycle;

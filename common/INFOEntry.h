@@ -1,14 +1,13 @@
 /*
  * SDAT - INFO Entry structures
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2014-10-15
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
  */
 
-#ifndef SDAT_INFOENTRY_H
-#define SDAT_INFOENTRY_H
+#pragma once
 
 #include "common.h"
 
@@ -88,5 +87,3 @@ struct INFOEntryWAVEARC : INFOEntry
 	uint32_t Size() const;
 	void Write(PseudoWrite &file) const;
 };
-
-#endif

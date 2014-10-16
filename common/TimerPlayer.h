@@ -1,7 +1,7 @@
 /*
  * SDAT - Timer Player structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2014-10-15
  *
  * Adapted from source code of FeOS Sound System
  * By fincs
@@ -10,8 +10,7 @@
  * This has been modified in order to be able to provide timing for an SSEQ.
  */
 
-#ifndef SDAT_TIMERPLAYER_H
-#define SDAT_TIMERPLAYER_H
+#pragma once
 
 #include <bitset>
 #include "TimerTrack.h"
@@ -58,6 +57,7 @@ struct TimerPlayer
 	std::vector<Time> trackTimes[MAXTRACKS];
 	double trailingSilenceSeconds;
 	TimerChannel channels[16];
+	int16_t variables[32];
 
 	const SSEQ *sseq;
 	const SBNK *sbnk;
@@ -101,5 +101,3 @@ struct TimerPlayer
 	void StartLengthThread();
 	void WaitForThread();
 };
-
-#endif

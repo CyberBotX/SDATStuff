@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2012 Matthias S. Benkmann
  * Slight modifications by Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2014-10-15
  *
  * The "Software" in the following 2 paragraphs refers to this file containing
  * the code to The Lean Mean C++ Option Parser.
@@ -212,8 +212,7 @@
  *     See @ref option::Descriptor::longopt for information on how to collect unknown options.
  */
 
-#ifndef OPTIONPARSER_H_
-#define OPTIONPARSER_H_
+#pragma once
 
 #include <string>
 #include <cstddef>
@@ -2819,5 +2818,3 @@ template<typename Function, typename Stream> void printUsage(Function *prn, Stre
 
 }
 // namespace option
-
-#endif /* OPTIONPARSER_H_ */

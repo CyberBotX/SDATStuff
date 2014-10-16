@@ -1,14 +1,13 @@
 /*
  * SDAT - SYMB (Symbol/Filename) Section structures
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2014-10-15
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
  */
 
-#ifndef SDAT_SYMBSECTION_H
-#define SDAT_SYMBSECTION_H
+#pragma once
 
 #include "common.h"
 
@@ -43,5 +42,3 @@ struct SYMBSection
 	void FixOffsets();
 	void Write(PseudoWrite &file) const;
 };
-
-#endif

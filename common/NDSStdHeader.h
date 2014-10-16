@@ -1,14 +1,13 @@
 /*
  * SDAT - Nintendo DS Standard Header structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2014-10-15
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
  */
 
-#ifndef SDAT_NDSSTDHEADER_H
-#define SDAT_NDSSTDHEADER_H
+#pragma once
 
 #include "common.h"
 
@@ -26,5 +25,3 @@ struct NDSStdHeader
 	void Verify(const std::string &typeToCheck, uint32_t magicToCheck) const;
 	void Write(PseudoWrite &file) const;
 };
-
-#endif

@@ -1,7 +1,7 @@
 /*
  * SDAT Strip
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-30
+ * Last modification on 2014-10-15
  *
  * NOTE: This version has been superceded by NDS to NCSF instead.
  *
@@ -47,9 +47,9 @@ int main(int argc, char *argv[])
 {
 	argc -= argc > 0;
 	argv += argc > 0;
-	option::Stats stats((opts), (argc), (argv));
-	std::vector<option::Option> options((stats.options_max)), buffer((stats.buffer_max));
-	option::Parser parse((opts), (argc), (argv), (&options[0]), (&buffer[0]));
+	option::Stats stats(opts, argc, argv);
+	std::vector<option::Option> options(stats.options_max), buffer(stats.buffer_max);
+	option::Parser parse(opts, argc, argv, &options[0], &buffer[0]);
 
 	if (parse.error())
 		return 1;
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 		file.exceptions(std::ofstream::failbit | std::ofstream::badbit);
 		file.open(outputFilename.c_str(), std::ofstream::out | std::ofstream::binary);
 
-		PseudoWrite ofile((&file));
+		PseudoWrite ofile(&file);
 
 		finalSDAT.Write(ofile);
 		std::cout << "Output written to " << outputFilename << "\n";

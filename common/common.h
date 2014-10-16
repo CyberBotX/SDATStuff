@@ -1,11 +1,10 @@
 /*
  * SDAT - Common functions
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-30
+ * Last modification on 2014-10-15
  */
 
-#ifndef SDAT_COMMON_H
-#define SDAT_COMMON_H
+#pragma once
 
 #include <string>
 #include <memory>
@@ -424,6 +423,14 @@ template<typename T> inline std::string NumToHexString(const T &num)
 	return "0x" + hex;
 }
 
+template<typename T1, typename T2> inline void clamp(T1 &valueToClamp, const T2 &minValue, const T2 &maxValue)
+{
+	if (valueToClamp < minValue)
+		valueToClamp = minValue;
+	else if (valueToClamp > maxValue)
+		valueToClamp = maxValue;
+}
+
 /*
  * SDAT Record types
  * List of types taken from the Nitro Composer Specification
@@ -449,7 +456,7 @@ template<size_t N> inline bool VerifyHeader(const int8_t (&arr)[N], const std::s
 
 inline bool FileExists(const std::string &filename)
 {
-	std::ifstream file((filename.c_str()));
+	std::ifstream file(filename.c_str());
 	return !!file;
 }
 
@@ -630,5 +637,3 @@ inline option::ArgStatus RequireNumericArgument(const option::Option &opt, bool 
 		std::cerr << "Option '" << std::string(opt.name).substr(0, opt.namelen) << "' requires a non-empty numeric argument.\n";
 	return option::ARG_ILLEGAL;
 }
-
-#endif

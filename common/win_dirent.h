@@ -22,88 +22,31 @@
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  *
- *
- * Version 1.13, Dec 12 2012, Toni Ronkko
- * Use traditional 8+3 file name if the name cannot be represented in the
- * default ANSI code page.  Now compiles again with MSVC 6.0.  Thanks to
- * Konstantin Khomoutov for testing.
- *
- * Version 1.12.1, Oct 1 2012, Toni Ronkko
- * Bug fix: renamed wide-character DIR structure _wDIR to _WDIR (with
- * capital W) in order to maintain compatibility with MingW.
- *
- * Version 1.12, Sep 30 2012, Toni Ronkko
- * Define PATH_MAX and NAME_MAX.  Added wide-character variants _wDIR,
- * _wdirent, _wopendir(), _wreaddir(), _wclosedir() and _wrewinddir().
- * Thanks to Edgar Buerkle and Jan Nijtmans for ideas and code.
- *
- * Do not include windows.h.  This allows dirent.h to be integrated more
- * easily into programs using winsock.  Thanks to Fernando Azaldegui.
- *
- * Version 1.11, Mar 15, 2011, Toni Ronkko
- * Defined FILE_ATTRIBUTE_DEVICE for MSVC 6.0.
- *
- * Version 1.10, Aug 11, 2010, Toni Ronkko
- * Added d_type and d_namlen fields to dirent structure.  The former is
- * especially useful for determining whether directory entry represents a
- * file or a directory.  For more information, see
- * http://www.delorie.com/gnu/docs/glibc/libc_270.html
- *
- * Improved conformance to the standards.  For example, errno is now set
- * properly on failure and assert() is never used.  Thanks to Peter Brockam
- * for suggestions.
- *
- * Fixed a bug in rewinddir(): when using relative directory names, change
- * of working directory no longer causes rewinddir() to fail.
- *
- * Version 1.9, Dec 15, 2009, John Cunningham
- * Added rewinddir member function
- *
- * Version 1.8, Jan 18, 2008, Toni Ronkko
- * Using FindFirstFileA and WIN32_FIND_DATAA to avoid converting string
- * between multi-byte and unicode representations.  This makes the
- * code simpler and also allows the code to be compiled under MingW.  Thanks
- * to Azriel Fasten for the suggestion.
- *
- * Mar 4, 2007, Toni Ronkko
- * Bug fix: due to the strncpy_s() function this file only compiled in
- * Visual Studio 2005.  Using the new string functions only when the
- * compiler version allows.
- *
- * Nov  2, 2006, Toni Ronkko
- * Major update: removed support for Watcom C, MS-DOS and Turbo C to
- * simplify the file, updated the code to compile cleanly on Visual
- * Studio 2005 with both unicode and multi-byte character strings,
- * removed rewinddir() as it had a bug.
- *
- * Aug 20, 2006, Toni Ronkko
- * Removed all remarks about MSVC 1.0, which is antiqued now.  Simplified
- * comments by removing SGML tags.
- *
- * May 14 2002, Toni Ronkko
- * Embedded the function definitions directly to the header so that no
- * source modules need to be included in the Visual Studio project.  Removed
- * all the dependencies to other projects so that this header file can be
- * used independently.
- *
- * May 28 1998, Toni Ronkko
- * First version.
- *****************************************************************************/
+ * $Id: dirent.h,v 1.20 2014/03/19 17:52:23 tronkko Exp $
+ */
 
-#ifndef DIRENT_H
-#define DIRENT_H
+#pragma once
 
+/*
+ * Define architecture flags so we don't need to include windows.h.
+ * Avoiding windows.h makes it simpler to use windows sockets in conjunction
+ * with dirent.h.
+ */
 #if !defined(_68K_) && !defined(_MPPC_) && !defined(_X86_) && !defined(_IA64_) && !defined(_AMD64_) && defined(_M_IX86)
 # define _X86_
 #endif
+#if !defined(_68K_) && !defined(_MPPC_) && !defined(_X86_) && !defined(_IA64_) && !defined(_AMD64_) && defined(_M_AMD64)
+# define _AMD64_
+#endif
+
 #include <cstdio>
 #include <cstdarg>
+#include <cwchar>
 #include <cstring>
 #include <cstdlib>
 #include <cerrno>
 #include <windef.h>
 #include <winbase.h>
-#include <wchar.h>
 #include <malloc.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -115,7 +58,7 @@
 #define _DIRENT_HAVE_D_NAMLEN
 
 /* Entries missing from MSVC 6.0 */
-#if !defined(FILE_ATTRIBUTE_DEVICE)
+#ifndef FILE_ATTRIBUTE_DEVICE
 # define FILE_ATTRIBUTE_DEVICE 0x40
 #endif
 
@@ -188,6 +131,7 @@
 #define DT_SOCK S_IFSOCK
 #define DT_CHR S_IFCHR
 #define DT_BLK S_IFBLK
+#define DT_LNK S_IFLNK
 
 /* Macros for converting between st_mode and d_type */
 #define IFTODT(mode) ((mode) & S_IFMT)
@@ -199,63 +143,43 @@
  * only defined for compatibility.  These macros should always return false
  * on Windows.
  */
-#ifndef S_ISFIFO
-# define S_ISFIFO(mode) (((mode) & S_IFMT) == S_IFIFO)
-#endif
-#ifndef S_ISDIR
-# define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
-#endif
-#ifndef S_ISREG
-# define S_ISREG(mode) (((mode) & S_IFMT) == S_IFREG)
-#endif
-#ifndef S_ISLNK
-# define S_ISLNK(mode) (((mode) & S_IFMT) == S_IFLNK)
-#endif
-#ifndef S_ISSOCK
-# define S_ISSOCK(mode) (((mode) & S_IFMT) == S_IFSOCK)
-#endif
-#ifndef S_ISCHR
-# define S_ISCHR(mode) (((mode) & S_IFMT) == S_IFCHR)
-#endif
-#ifndef S_ISBLK
-# define S_ISBLK(mode) (((mode) & S_IFMT) == S_IFBLK)
-#endif
+#define S_ISFIFO(mode) (((mode) & S_IFMT) == S_IFIFO)
+#define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
+#define S_ISREG(mode) (((mode) & S_IFMT) == S_IFREG)
+#define S_ISLNK(mode) (((mode) & S_IFMT) == S_IFLNK)
+#define S_ISSOCK(mode) (((mode) & S_IFMT) == S_IFSOCK)
+#define S_ISCHR(mode) (((mode) & S_IFMT) == S_IFCHR)
+#define S_ISBLK(mode) (((mode) & S_IFMT) == S_IFBLK)
 
 /* Return the exact length of d_namlen without zero terminator */
 #define _D_EXACT_NAMLEN(p) ((p)->d_namlen)
 
 /* Return number of bytes needed to store d_namlen */
-#define _D_ALLOC_NAMLEN(p) (PATH_MAX + 1)
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define _D_ALLOC_NAMLEN(p) (PATH_MAX)
 
 /* Wide-character version */
 struct _wdirent
 {
-    long d_ino;                                 /* Always zero */
-    unsigned short d_reclen;                    /* Structure size */
-    size_t d_namlen;                            /* Length of name without \0 */
-    int d_type;                                 /* File type */
-    wchar_t d_name[PATH_MAX + 1];               /* File name */
+	long d_ino; /* Always zero */
+	unsigned short d_reclen; /* Structure size */
+	size_t d_namlen; /* Length of name without \0 */
+	int d_type; /* File type */
+	wchar_t d_name[PATH_MAX]; /* File name */
 };
-typedef struct _wdirent _wdirent;
 
 struct _WDIR
 {
-    struct _wdirent ent;                        /* Current directory entry */
-    WIN32_FIND_DATAW data;                      /* Private file data */
-    int cached;                                 /* True if data is valid */
-    HANDLE handle;                              /* Win32 search handle */
-    wchar_t *patt;                              /* Initial directory name */
+	_wdirent ent; /* Current directory entry */
+	WIN32_FIND_DATAW data; /* Private file data */
+	int cached; /* True if data is valid */
+	HANDLE handle; /* Win32 search handle */
+	wchar_t *patt; /* Initial directory name */
 };
-typedef struct _WDIR _WDIR;
 
 static _WDIR *_wopendir(const wchar_t *dirname);
-static struct _wdirent *_wreaddir(_WDIR *dirp);
+static _wdirent *_wreaddir(_WDIR *dirp);
 static int _wclosedir(_WDIR *dirp);
-static void _wrewinddir(_WDIR *dirp);
+static void _wrewinddir(_WDIR* dirp);
 
 /* For compatibility with Symbian */
 #define wdirent _wdirent
@@ -268,23 +192,21 @@ static void _wrewinddir(_WDIR *dirp);
 /* Multi-byte character versions */
 struct dirent
 {
-    long d_ino;                                 /* Always zero */
-    unsigned short d_reclen;                    /* Structure size */
-    size_t d_namlen;                            /* Length of name without \0 */
-    int d_type;                                 /* File type */
-    char d_name[PATH_MAX + 1];                  /* File name */
+	long d_ino; /* Always zero */
+	unsigned short d_reclen; /* Structure size */
+	size_t d_namlen; /* Length of name without \0 */
+	int d_type; /* File type */
+	char d_name[PATH_MAX]; /* File name */
 };
-typedef struct dirent dirent;
 
 struct DIR
 {
-    struct dirent ent;
-    struct _WDIR *wdirp;
+	dirent ent;
+	_WDIR *wdirp;
 };
-typedef struct DIR DIR;
 
 static DIR *opendir(const char *dirname);
-static struct dirent *readdir(DIR *dirp);
+static dirent *readdir(DIR *dirp);
 static int closedir(DIR *dirp);
 static void rewinddir(DIR *dirp);
 
@@ -305,32 +227,27 @@ static void dirent_set_errno(int error);
  */
 static _WDIR *_wopendir(const wchar_t *dirname)
 {
-	_WDIR *dirp = NULL;
-	int error;
-
 	/* Must have directory name */
 	if (!dirname || !dirname[0])
 	{
 		dirent_set_errno(ENOENT);
-		return NULL;
+		return nullptr;
 	}
 
 	/* Allocate new _WDIR structure */
-	dirp = (_WDIR *)malloc(sizeof(struct _WDIR));
+	_WDIR *dirp = static_cast<_WDIR *>(malloc(sizeof(_WDIR)));
+	int error;
 	if (dirp)
 	{
-		DWORD n;
-
 		/* Reset _WDIR structure */
 		dirp->handle = INVALID_HANDLE_VALUE;
-		dirp->patt = NULL;
 		dirp->cached = 0;
 
 		/* Compute the length of full path plus zero terminator */
-		n = GetFullPathNameW(dirname, 0, NULL, NULL);
+		DWORD n = GetFullPathNameW(dirname, 0, nullptr, nullptr);
 
 		/* Allocate room for absolute directory name and search pattern */
-		dirp->patt = (wchar_t *)malloc(sizeof(wchar_t) * n + 16);
+		dirp->patt = static_cast<wchar_t *>(malloc(sizeof(wchar_t) * n + 16));
 		if (dirp->patt)
 		{
 			/*
@@ -338,25 +255,27 @@ static _WDIR *_wopendir(const wchar_t *dirname)
 			 * allows rewinddir() to function correctly even when current
 			 * working directory is changed between opendir() and rewinddir().
 			 */
-			n = GetFullPathNameW(dirname, n, dirp->patt, NULL);
+			n = GetFullPathNameW(dirname, n, dirp->patt, nullptr);
 			if (n > 0)
 			{
-                /* Append search pattern \* to the directory name */
+				/* Append search pattern \* to the directory name */
 				wchar_t *p = dirp->patt + n;
 				if (dirp->patt < p)
+				{
 					switch (p[-1])
 					{
 						case '\\':
 						case '/':
 						case ':':
 							/* Directory ends in path separator, e.g. c:\temp\ */
-							/*NOP*/;
+							/*NOP*/
 							break;
 
 						default:
 							/* Directory name doesn't end in path separator */
 							*p++ = '\\';
 					}
+				}
 				*p++ = '*';
 				*p = '\0';
 
@@ -390,7 +309,7 @@ static _WDIR *_wopendir(const wchar_t *dirname)
 	if (error && dirp)
 	{
 		_wclosedir(dirp);
-		dirp = NULL;
+		dirp = nullptr;
 	}
 
 	return dirp;
@@ -402,18 +321,13 @@ static _WDIR *_wopendir(const wchar_t *dirname)
  * this function include regular files, sub-directories, pseudo-directories
  * "." and ".." as well as volume labels, hidden files and system files.
  */
-static struct _wdirent *_wreaddir(_WDIR *dirp)
+static _wdirent *_wreaddir(_WDIR *dirp)
 {
-	WIN32_FIND_DATAW *datap;
-	struct _wdirent *entp;
-
 	/* Read next directory entry */
-	datap = dirent_next(dirp);
+	WIN32_FIND_DATAW *datap = dirent_next(dirp);
+	_wdirent *entp;
 	if (datap)
 	{
-		size_t n;
-		DWORD attr;
-
 		/* Pointer to directory entry to return */
 		entp = &dirp->ent;
 
@@ -422,8 +336,8 @@ static struct _wdirent *_wreaddir(_WDIR *dirp)
 		 * long to fit in to the destination buffer, then truncate file name
 		 * to PATH_MAX characters and zero-terminate the buffer.
 		 */
-		n = 0;
-		while (n < PATH_MAX && datap->cFileName[n])
+		size_t n = 0;
+		while (n + 1 < PATH_MAX && datap->cFileName[n])
 		{
 			entp->d_name[n] = datap->cFileName[n];
 			++n;
@@ -434,21 +348,21 @@ static struct _wdirent *_wreaddir(_WDIR *dirp)
 		entp->d_namlen = n;
 
 		/* File type */
-		attr = datap->dwFileAttributes;
+		DWORD attr = datap->dwFileAttributes;
 		if (attr & FILE_ATTRIBUTE_DEVICE)
 			entp->d_type = DT_CHR;
-        else if (attr & FILE_ATTRIBUTE_DIRECTORY)
+		else if (attr & FILE_ATTRIBUTE_DIRECTORY)
 			entp->d_type = DT_DIR;
-        else
+		else
 			entp->d_type = DT_REG;
 
 		/* Reset dummy fields */
 		entp->d_ino = 0;
-		entp->d_reclen = sizeof(struct _wdirent);
+		entp->d_reclen = sizeof(_wdirent);
 	}
 	else
 		/* Last directory entry read */
-		entp = NULL;
+		entp = nullptr;
 
 	return entp;
 }
@@ -474,7 +388,7 @@ static int _wclosedir(_WDIR *dirp)
 		if (dirp->patt)
 		{
 			free(dirp->patt);
-			dirp->patt = NULL;
+			dirp->patt = nullptr;
 		}
 
 		/* Release directory structure */
@@ -494,7 +408,7 @@ static int _wclosedir(_WDIR *dirp)
  * Rewind directory stream such that _wreaddir() returns the very first
  * file name again.
  */
-static void _wrewinddir(_WDIR *dirp)
+static void _wrewinddir(_WDIR* dirp)
 {
 	if (dirp)
 	{
@@ -510,10 +424,9 @@ static void _wrewinddir(_WDIR *dirp)
 /* Get first directory entry (internal) */
 static WIN32_FIND_DATAW *dirent_first(_WDIR *dirp)
 {
-	WIN32_FIND_DATAW *datap;
-
 	/* Open directory and retrieve the first entry */
 	dirp->handle = FindFirstFileW(dirp->patt, &dirp->data);
+	WIN32_FIND_DATAW *datap;
 	if (dirp->handle != INVALID_HANDLE_VALUE)
 	{
 		/* a directory entry is now waiting in memory */
@@ -524,7 +437,7 @@ static WIN32_FIND_DATAW *dirent_first(_WDIR *dirp)
 	{
 		/* Failed to re-open directory: no directory entry in memory */
 		dirp->cached = 0;
-		datap = NULL;
+		datap = nullptr;
 	}
 	return datap;
 }
@@ -544,7 +457,7 @@ static WIN32_FIND_DATAW *dirent_next(_WDIR *dirp)
 	else if (dirp->handle != INVALID_HANDLE_VALUE)
 	{
 		/* Get the next directory entry from stream */
-		if (FindNextFileW(dirp->handle, &dirp->data))
+		if (!!FindNextFileW(dirp->handle, &dirp->data))
 			/* Got a file */
 			p = &dirp->data;
 		else
@@ -552,7 +465,7 @@ static WIN32_FIND_DATAW *dirent_next(_WDIR *dirp)
 			/* The very last entry has been processed or an error occured */
 			FindClose(dirp->handle);
 			dirp->handle = INVALID_HANDLE_VALUE;
-			p = NULL;
+			p = nullptr;
 		}
 	}
 	else
@@ -562,30 +475,28 @@ static WIN32_FIND_DATAW *dirent_next(_WDIR *dirp)
 	return p;
 }
 
-/*
+/* 
  * Open directory stream using plain old C-string.
  */
 static DIR *opendir(const char *dirname)
 {
-	struct DIR *dirp;
-	int error;
-
 	/* Must have directory name */
 	if (!dirname || !dirname[0])
 	{
 		dirent_set_errno(ENOENT);
-		return NULL;
+		return nullptr;
 	}
 
 	/* Allocate memory for DIR structure */
-	dirp = (DIR *)malloc(sizeof(struct DIR));
+	DIR *dirp = static_cast<DIR *>(malloc(sizeof(struct DIR)));
+	int error;
 	if (dirp)
 	{
-		wchar_t wname[PATH_MAX + 1];
+		wchar_t wname[PATH_MAX];
 		size_t n;
 
 		/* Convert directory name to wide-character string */
-		error = dirent_mbstowcs_s(&n, wname, PATH_MAX + 1, dirname, PATH_MAX);
+		error = dirent_mbstowcs_s(&n, wname, PATH_MAX, dirname, PATH_MAX);
 		if (!error)
 		{
 			/* Open directory stream using wide-character name */
@@ -611,10 +522,10 @@ static DIR *opendir(const char *dirname)
 		error = 1;
 
 	/* Clean up in case of error */
-    if (error && dirp)
+	if (error && dirp)
 	{
 		free(dirp);
-		dirp = NULL;
+		dirp = nullptr;
 	}
 
 	return dirp;
@@ -633,20 +544,17 @@ static DIR *opendir(const char *dirname)
  * ANSI strings to the console code page so many non-ASCII characters will
  * display correcly.
  */
-static struct dirent *readdir(DIR *dirp)
+static dirent *readdir(DIR *dirp)
 {
-	WIN32_FIND_DATAW *datap;
-	struct dirent *entp;
-
 	/* Read next directory entry */
-	datap = dirent_next(dirp->wdirp);
+	WIN32_FIND_DATAW *datap = dirent_next(dirp->wdirp);
+	dirent *entp;
 	if (datap)
 	{
 		size_t n;
-		int error;
 
 		/* Attempt to convert file name to multi-byte string */
-		error = dirent_wcstombs_s(&n, dirp->ent.d_name, MAX_PATH + 1, datap->cFileName, MAX_PATH);
+		int error = dirent_wcstombs_s(&n, dirp->ent.d_name, PATH_MAX, datap->cFileName, PATH_MAX);
 
 		/*
 		 * If the file name cannot be represented by a multi-byte string,
@@ -659,12 +567,10 @@ static struct dirent *readdir(DIR *dirp)
 		 * VirtualBox shared folders fail to do this.
 		 */
 		if (error && datap->cAlternateFileName[0])
-			error = dirent_wcstombs_s(&n, dirp->ent.d_name, MAX_PATH + 1, datap->cAlternateFileName, sizeof(datap->cAlternateFileName) / sizeof(datap->cAlternateFileName[0]));
+			error = dirent_wcstombs_s(&n, dirp->ent.d_name, PATH_MAX, datap->cAlternateFileName, PATH_MAX);
 
 		if (!error)
 		{
-			DWORD attr;
-
 			/* Initialize directory entry for return */
 			entp = &dirp->ent;
 
@@ -672,7 +578,7 @@ static struct dirent *readdir(DIR *dirp)
 			entp->d_namlen = n - 1;
 
 			/* File attributes */
-			attr = datap->dwFileAttributes;
+			DWORD attr = datap->dwFileAttributes;
 			if (attr & FILE_ATTRIBUTE_DEVICE)
 				entp->d_type = DT_CHR;
 			else if (attr & FILE_ATTRIBUTE_DIRECTORY)
@@ -682,7 +588,7 @@ static struct dirent *readdir(DIR *dirp)
 
 			/* Reset dummy fields */
 			entp->d_ino = 0;
-			entp->d_reclen = sizeof(struct dirent);
+			entp->d_reclen = sizeof(dirent);
 		}
 		else
 		{
@@ -703,7 +609,7 @@ static struct dirent *readdir(DIR *dirp)
 	}
 	else
 		/* No more directory entries */
-		entp = NULL;
+		entp = nullptr;
 
 	return entp;
 }
@@ -718,7 +624,7 @@ static int closedir(DIR *dirp)
 	{
 		/* Close wide-character directory stream */
 		ok = _wclosedir(dirp->wdirp);
-		dirp->wdirp = NULL;
+		dirp->wdirp = nullptr;
 
 		/* Release multi-byte character version */
 		free(dirp);
@@ -752,13 +658,17 @@ static int dirent_mbstowcs_s(size_t *pReturnValue, wchar_t *wcstr, size_t sizeIn
 #else
 	/* Older Visual Studio or non-Microsoft compiler */
 
-	/* Convert to wide-character string */
-	size_t n = mbstowcs(wcstr, mbstr, count);
-	if (n < sizeInWords)
+	/* Convert to wide-character string (or count characters) */
+	size_t n = mbstowcs(wcstr, mbstr, sizeInWords);
+	if (!wcstr || n < count)
 	{
 		/* Zero-terminate output buffer */
-		if (wcstr)
+		if (wcstr && sizeInWords)
+		{
+			if (n >= sizeInWords)
+				n = sizeInWords - 1;
 			wcstr[n] = 0;
+		}
 
 		/* Length of resuting multi-byte string WITH zero terminator */
 		if (pReturnValue)
@@ -776,7 +686,7 @@ static int dirent_mbstowcs_s(size_t *pReturnValue, wchar_t *wcstr, size_t sizeIn
 }
 
 /* Convert wide-character string to multi-byte string */
-static int dirent_wcstombs_s(size_t *pReturnValue, char *mbstr, size_t sizeInBytes, const wchar_t *wcstr, size_t count)
+static int dirent_wcstombs_s(size_t *pReturnValue, char *mbstr, size_t sizeInBytes /* max size of mbstr */, const wchar_t *wcstr, size_t count)
 {
 	int error;
 
@@ -786,15 +696,19 @@ static int dirent_wcstombs_s(size_t *pReturnValue, char *mbstr, size_t sizeInByt
 #else
 	/* Older Visual Studio or non-Microsoft compiler */
 
-    /* Convert to multi-byte string */
-    size_t n = wcstombs(mbstr, wcstr, count);
-	if (n < sizeInBytes)
+	/* Convert to multi-byte string (or count the number of bytes needed) */
+	size_t n = wcstombs(mbstr, wcstr, sizeInBytes);
+	if (!mbstr || n < count)
 	{
 		/* Zero-terminate output buffer */
-		if (mbstr)
+		if (mbstr && sizeInBytes)
+		{
+			if (n >= sizeInBytes)
+				n = sizeInBytes - 1;
 			mbstr[n] = '\0';
+		}
 
-		/* Length of resulting multi-bytes string WITH zero-terminator */
+		/* Lenght of resulting multi-bytes string WITH zero-terminator */
 		if (pReturnValue)
 			*pReturnValue = n + 1;
 
@@ -812,17 +726,11 @@ static int dirent_wcstombs_s(size_t *pReturnValue, char *mbstr, size_t sizeInByt
 /* Set errno variable */
 static void dirent_set_errno(int error)
 {
-#ifdef _MSC_VER
-    /* Microsoft Visual Studio */
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+	/* Microsoft Visual Studio 2005 and later */
 	_set_errno(error);
 #else
-	/* Non-Microsoft compiler */
+	/* Non-Microsoft compiler or older Microsoft compiler */
 	errno = error;
 #endif
 }
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /*DIRENT_H*/

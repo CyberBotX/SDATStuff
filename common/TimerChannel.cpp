@@ -1,7 +1,7 @@
 /*
  * SDAT - Timer Channel structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2014-10-15
  *
  * Adapted from source code of FeOS Sound System
  * By fincs
@@ -394,7 +394,7 @@ static inline uint16_t Timer_Adjust(uint16_t basetmr, int pitch)
 		tmr <<= shift;
 	}
 	else
-		return 0x10;
+		return 0xFFFF;
 
 	if (tmr < 0x10)
 		return 0x10;
@@ -441,11 +441,12 @@ void TimerChannel::Update()
 			this->reg.source = this->tempReg.SOURCE;
 			this->reg.loopStart = this->tempReg.REPEAT_POINT;
 			this->reg.length = this->tempReg.LENGTH;
+			this->reg.totalLength = this->reg.loopStart + this->reg.length;
 			this->ampl = AMPL_THRESHOLD;
 			this->state = CS_ATTACK;
 			// Fall down
 		case CS_ATTACK:
-			this->ampl = (static_cast<int>(this->ampl) * static_cast<int>(this->attackLvl)) / 255;
+			this->ampl = (this->ampl * static_cast<int>(this->attackLvl)) / 255;
 			if (!this->ampl)
 				this->state = CS_DECAY;
 			break;
@@ -543,10 +544,7 @@ void TimerChannel::Update()
 			if (bModulation && this->modType == 1)
 				totalVol += modParam;
 			totalVol += AMPL_K;
-			if (totalVol < 0)
-				totalVol = 0;
-			if (static_cast<unsigned>(totalVol) >= sizeof(getvoltbl) / sizeof(getvoltbl[0]))
-				totalVol = (sizeof(getvoltbl) / sizeof(getvoltbl[0])) - 1;
+			clamp(totalVol, 0, AMPL_K);
 
 			cr &= ~(SOUND_VOL(0x7F) | SOUND_VOLDIV(3));
 			cr |= SOUND_VOL(static_cast<int>(getvoltbl[totalVol]));
@@ -640,11 +638,11 @@ int32_t TimerChannel::GenerateSample()
 void TimerChannel::IncrementSample()
 {
 	this->reg.samplePosition += this->reg.sampleIncrease;
-	if (this->reg.format != 3 && this->reg.samplePosition >= (this->reg.loopStart + this->reg.length))
+	if (this->reg.format != 3 && this->reg.samplePosition >= this->reg.totalLength)
 	{
 		if (this->reg.repeatMode == 1)
 		{
-			while (this->reg.samplePosition >= (this->reg.loopStart + this->reg.length))
+			while (this->reg.samplePosition >= this->reg.totalLength)
 				this->reg.samplePosition -= this->reg.length;
 		}
 		else

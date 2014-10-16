@@ -1,11 +1,10 @@
 /*
  * Common NCSF functions
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-30
+ * Last modification on 2014-10-15
  */
 
-#ifndef NCSF_H
-#define NCSF_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -23,5 +22,3 @@ TagList GetTagsFromPSF(PseudoReadFile &file, uint8_t versionByte);
 Files GetFilesInDirectory(const std::string &path, const std::vector<std::string> &extensions = std::vector<std::string>());
 void RemoveFiles(const Files &files);
 void GetTime(const std::string &filename, const SDAT *sdat, const SSEQ *sseq, TagList &tags, bool verbose, uint32_t numberOfLoops, uint32_t fadeLoop, uint32_t fadeOneShot);
-
-#endif

@@ -1,14 +1,13 @@
 /*
  * SDAT - SWAR (Wave Archive) structures
  * By Naram Qashat (CyberBotX)
- * Last modification on 2013-03-30
+ * Last modification on 2014-10-15
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
  */
 
-#ifndef SDAT_SWAR_H
-#define SDAT_SWAR_H
+#pragma once
 
 #include <map>
 #include "SWAV.h"
@@ -27,5 +26,3 @@ struct SWAR
 
 	void Read(PseudoReadFile &file);
 };
-
-#endif

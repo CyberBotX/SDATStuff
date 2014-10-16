@@ -1,7 +1,7 @@
 /*
  * NDS to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-30
+ * Last modification on 2014-10-15
  *
  * Version history:
  *   v1.0 - 2013-03-25 - Initial version
@@ -16,11 +16,13 @@
  *                     - Slightly better file checking when copying from an
  *                       existing SDAT, will check by data only if checking by
  *                       filename and data doesn't give any results.
+ *   v1.4 - 2014-10-15 - Improved timing system by implementing the random,
+ *                       variable, and conditional SSEQ commands.
  */
 
 #include "NCSF.h"
 
-static const std::string NDSTONCSF_VERSION = "1.2";
+static const std::string NDSTONCSF_VERSION = "1.4";
 
 enum { UNKNOWN, HELP, VERBOSE, TIME, FADELOOP, FADEONESHOT, EXCLUDE, INCLUDE, AUTO, NOCOPY };
 const option::Descriptor opts[] =
@@ -63,9 +65,9 @@ int main(int argc, char *argv[])
 	// Options parsing
 	argc -= argc > 0;
 	argv += argc > 0;
-	option::Stats stats((opts), (argc), (argv));
-	std::vector<option::Option> options((stats.options_max)), buffer((stats.buffer_max));
-	option::Parser parse((opts), (argc), (argv), (&options[0]), (&buffer[0]));
+	option::Stats stats(opts, argc, argv);
+	std::vector<option::Option> options(stats.options_max), buffer(stats.buffer_max);
+	option::Parser parse(opts, argc, argv, &options[0], &buffer[0]);
 
 	if (parse.error())
 		return 1;
@@ -139,7 +141,7 @@ int main(int argc, char *argv[])
 							if (sdatVector.empty())
 								throw std::runtime_error("Program section for " + *curr + " was empty.");
 
-							PseudoReadFile sdatFileData((*curr));
+							PseudoReadFile sdatFileData(*curr);
 							sdatFileData.GetDataFromVector(sdatVector.begin(), sdatVector.end());
 
 							SDAT sdat;

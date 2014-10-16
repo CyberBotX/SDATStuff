@@ -1,14 +1,13 @@
 /*
  * SDAT - SBNK (Sound Bank) structures
  * By Naram Qashat (CyberBotX)
- * Last modification on 2013-03-30
+ * Last modification on 2014-10-15
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
  */
 
-#ifndef SDAT_SBNK_H
-#define SDAT_SBNK_H
+#pragma once
 
 #include "SWAR.h"
 #include "INFOEntry.h"
@@ -55,5 +54,3 @@ struct SBNK
 
 	void Read(PseudoReadFile &file);
 };
-
-#endif

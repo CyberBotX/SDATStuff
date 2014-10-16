@@ -1,7 +1,7 @@
 /*
  * Common NCSF functions
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-30
+ * Last modification on 2014-10-15
  */
 
 #include <fstream>
@@ -32,7 +32,7 @@ void MakeNCSF(const std::string &filename, const std::vector<uint8_t> &reservedS
 	file.exceptions(std::ofstream::failbit | std::ofstream::badbit);
 	file.open(filename.c_str(), std::ofstream::out | std::ofstream::binary);
 
-	PseudoWrite ofile((&file));
+	PseudoWrite ofile(&file);
 
 	ofile.WriteLE("PSF", 3);
 	ofile.WriteLE<uint8_t>(0x25);

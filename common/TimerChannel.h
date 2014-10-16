@@ -1,7 +1,7 @@
 /*
  * SDAT - Timer Channel structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2014-10-15
  *
  * Adapted from source code of FeOS Sound System
  * By fincs
@@ -13,8 +13,7 @@
  * This has been modified in order to be able to provide timing for an SSEQ.
  */
 
-#ifndef SDAT_TIMERCHANNEL_H
-#define SDAT_TIMERCHANNEL_H
+#pragma once
 
 #include <bitset>
 #include "SWAV.h"
@@ -42,6 +41,8 @@ inline int Cnv_Sust(int sust)
 		-10, -8, -7, -6, -4, -3, -1, 0
 	};
 
+	if (sust & 0x80) // Supposedly invalid value...
+		sust = 0x7F; // Use apparently correct default
 	return lut[sust];
 }
 
@@ -101,6 +102,8 @@ struct NDSSoundRegister
 
 	// Length Register
 	uint32_t length;
+
+	uint32_t totalLength;
 
 	NDSSoundRegister();
 
@@ -183,5 +186,3 @@ struct TimerChannel
 	int32_t GenerateSample();
 	void IncrementSample();
 };
-
-#endif
