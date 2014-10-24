@@ -1,7 +1,7 @@
 /*
  * SDAT - Timer Player structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-10-15
+ * Last modification on 2014-10-23
  *
  * Adapted from source code of FeOS Sound System
  * By fincs
@@ -51,7 +51,7 @@ struct TimerPlayer
 {
 	uint8_t prio, nTracks;
 	uint16_t tempo, tempoCount, tempoRate;
-	int16_t masterVol;
+	int16_t masterVol, sseqVol;
 
 	TimerTrack tracks[MAXTRACKS];
 	std::vector<Time> trackTimes[MAXTRACKS];

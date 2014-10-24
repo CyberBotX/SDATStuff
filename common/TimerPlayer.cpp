@@ -1,7 +1,7 @@
 /*
  * SDAT - Timer Player structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-10-15
+ * Last modification on 2014-10-23
  *
  * Adapted from source code of FeOS Sound System
  * By fincs
@@ -15,7 +15,7 @@
 #undef min
 #undef max
 
-TimerPlayer::TimerPlayer() : prio(0), nTracks(0), tempo(120), tempoCount(0), tempoRate(0x100), masterVol(0), trailingSilenceSeconds(0), sseq(nullptr), sbnk(nullptr),
+TimerPlayer::TimerPlayer() : prio(0), nTracks(0), tempo(120), tempoCount(0), tempoRate(0x100), masterVol(0), sseqVol(0), trailingSilenceSeconds(0), sseq(nullptr), sbnk(nullptr),
 	seconds(0),
 #ifdef _WIN32
 	mutex(CreateMutex(nullptr, false, nullptr)), thread(nullptr),
@@ -26,10 +26,14 @@ TimerPlayer::TimerPlayer() : prio(0), nTracks(0), tempo(120), tempoCount(0), tem
 {
 	memset(this->swar, 0, sizeof(this->swar));
 	for (int i = 0; i < 16; ++i)
+	{
 		this->channels[i].chnId = i;
+		this->channels[i].ply = this;
+	}
 	memset(this->variables, -1, sizeof(this->variables));
 }
 
+// Original FSS Function: Player_Setup
 void TimerPlayer::Setup(const SSEQ *sseqToPlay)
 {
 	this->sseq = sseqToPlay;
@@ -45,11 +49,12 @@ void TimerPlayer::Setup(const SSEQ *sseqToPlay)
 	this->tracks[0].startPos = file.pos;
 }
 
+// Original FSS Function: Chn_Alloc
 int TimerPlayer::ChannelAlloc(int type, int priority)
 {
 	static const uint8_t pcmChnArray[] = { 4, 5, 6, 7, 2, 0, 3, 1, 8, 9, 10, 11, 14, 12, 15, 13 };
-	static const uint8_t psgChnArray[] = { 13, 12, 11, 10, 9, 8 };
-	static const uint8_t noiseChnArray[] = { 15, 14 };
+	static const uint8_t psgChnArray[] = { 8, 9, 10, 11, 12, 13 };
+	static const uint8_t noiseChnArray[] = { 14, 15 };
 	static const uint8_t arraySizes[] = { sizeof(pcmChnArray), sizeof(psgChnArray), sizeof(noiseChnArray) };
 	static const uint8_t *const arrayArray[] = { pcmChnArray, psgChnArray, noiseChnArray };
 
@@ -74,14 +79,14 @@ int TimerPlayer::ChannelAlloc(int type, int priority)
 
 	if (curChnNo == -1 || priority < this->channels[curChnNo].prio)
 		return -1;
-	this->channels[curChnNo].ply = this;
 	this->channels[curChnNo].noteLength = -1;
-	this->channels[curChnNo].vol = 0;
+	this->channels[curChnNo].vol = 0x7FF;
 	return curChnNo;
 }
 
 const double SecondsPerClockCycle = 64.0 * 2728.0 / ARM7_CLOCK;
 
+// Original FSS Function: Player_Run
 void TimerPlayer::Run()
 {
 	while (this->tempoCount > 240)
@@ -209,9 +214,6 @@ void TimerPlayer::GetLength()
 						rightChannel += muldiv7(sample, chn.reg.panning);
 					}
 				}
-
-				leftChannel = muldiv7(leftChannel, 127 - this->masterVol);
-				rightChannel = muldiv7(rightChannel, 127 - this->masterVol);
 
 				clamp(leftChannel, std::numeric_limits<int16_t>::min(), std::numeric_limits<int16_t>::max());
 				clamp(rightChannel, std::numeric_limits<int16_t>::min(), std::numeric_limits<int16_t>::max());

@@ -1,7 +1,7 @@
 /*
  * SDAT - Timer Track structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-10-15
+ * Last modification on 2014-10-23
  *
  * Adapted from source code of FeOS Sound System
  * By fincs
@@ -52,6 +52,7 @@ TimerTrack::TimerTrack() : trackId(-1), state(), prio(0), ply(nullptr), startPos
 	this->readvl = std::bind(&TimerTrack::ReadVL, this);
 }
 
+// Original FSS Function: Track_ClearState
 void TimerTrack::ClearState()
 {
 	this->state.reset();
@@ -65,8 +66,7 @@ void TimerTrack::ClearState()
 	this->portaKey = 60;
 	this->portaTime = 0;
 	this->sweepPitch = 0;
-	this->vol = 64;
-	this->expr = 127;
+	this->vol = this->expr = 127;
 	this->pan = 0;
 	this->pitchBendRange = 2;
 	this->pitchBend = this->transpose = 0;
@@ -76,12 +76,13 @@ void TimerTrack::ClearState()
 	this->modType = 0;
 	this->modRange = 1;
 	this->modSpeed = 16;
-	this->modDelay = 10;
+	this->modDelay = 0;
 	this->modDepth = 0;
 
 	this->hitLoop = this->hitEnd = false;
 }
 
+// Original FSS Function: Player_InitTrack
 void TimerTrack::Init(uint8_t handle, TimerPlayer *player, const PseudoReadFile &source)
 {
 	this->trackId = handle;
@@ -91,6 +92,7 @@ void TimerTrack::Init(uint8_t handle, TimerPlayer *player, const PseudoReadFile 
 	this->ClearState();
 }
 
+// Original FSS Function: Note_On
 int TimerTrack::NoteOn(int key, int vel, int len)
 {
 	auto sbnk = this->ply->sbnk;
@@ -209,6 +211,7 @@ int TimerTrack::NoteOn(int key, int vel, int len)
 	return nCh;
 }
 
+// Original FSS Function: Note_On_Tie
 int TimerTrack::NoteOnTie(int key, int vel)
 {
 	// Find an existing note
@@ -244,6 +247,7 @@ int TimerTrack::NoteOnTie(int key, int vel)
 	return i;
 }
 
+// Original FSS Function: Track_ReleaseAllNotes
 void TimerTrack::ReleaseAllNotes()
 {
 	for (int i = 0; i < 16; ++i)
@@ -466,6 +470,7 @@ static inline std::function<bool (int16_t, int16_t)> CompareFunc(int cmd)
 	}
 }
 
+// Original FSS Function: Track_Run
 void TimerTrack::Run()
 {
 	// Indicate "heartbeat" for this track

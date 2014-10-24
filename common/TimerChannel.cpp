@@ -1,7 +1,7 @@
 /*
  * SDAT - Timer Channel structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-10-15
+ * Last modification on 2014-10-23
  *
  * Adapted from source code of FeOS Sound System
  * By fincs
@@ -72,9 +72,11 @@ TimerChannel::TimerChannel() : chnId(-1), tempReg(), state(CS_NONE), trackId(-1)
 {
 }
 
+// Original FSS Function: Chn_UpdateVol
 void TimerChannel::UpdateVol(const TimerTrack &trk)
 {
 	int finalVol = trk.ply->masterVol;
+	finalVol += trk.ply->sseqVol;
 	finalVol += Cnv_Sust(trk.vol);
 	finalVol += Cnv_Sust(trk.expr);
 	if (finalVol < -AMPL_K)
@@ -82,11 +84,13 @@ void TimerChannel::UpdateVol(const TimerTrack &trk)
 	this->extAmpl = finalVol;
 }
 
+// Original FSS Function: Chn_UpdatePan
 void TimerChannel::UpdatePan(const TimerTrack &trk)
 {
 	this->extPan = trk.pan;
 }
 
+// Original FSS Function: Chn_UpdateTune
 void TimerChannel::UpdateTune(const TimerTrack &trk)
 {
 	int tune = (static_cast<int>(this->key) - static_cast<int>(this->orgKey)) * 64;
@@ -94,6 +98,7 @@ void TimerChannel::UpdateTune(const TimerTrack &trk)
 	this->extTune = tune;
 }
 
+// Original FSS Function: Chn_UpdateMod
 void TimerChannel::UpdateMod(const TimerTrack &trk)
 {
 	this->modType = trk.modType;
@@ -103,6 +108,7 @@ void TimerChannel::UpdateMod(const TimerTrack &trk)
 	this->modDelay = trk.modDelay;
 }
 
+// Original FSS Function: Chn_UpdatePorta
 void TimerChannel::UpdatePorta(const TimerTrack &trk)
 {
 	this->manualSweep = false;
@@ -130,6 +136,7 @@ void TimerChannel::UpdatePorta(const TimerTrack &trk)
 	}
 }
 
+// Original FSS Function: Chn_Release
 void TimerChannel::Release()
 {
 	this->noteLength = -1;
@@ -137,6 +144,7 @@ void TimerChannel::Release()
 	this->state = CS_RELEASE;
 }
 
+// Original FSS Function: Chn_Kill
 void TimerChannel::Kill()
 {
 	this->state = CS_NONE;
@@ -162,6 +170,7 @@ static inline int getModFlag(int type)
 	}
 }
 
+// Original FSS Function: Chn_UpdateTracks
 void TimerChannel::UpdateTrack()
 {
 	if (!this->ply)
@@ -171,11 +180,11 @@ void TimerChannel::UpdateTrack()
 	if (trkn == -1)
 		return;
 
-	auto &trackFlags = this->ply->tracks[trkn].updateFlags;
+	auto &trk = this->ply->tracks[trkn];
+	auto &trackFlags = trk.updateFlags;
 	if (trackFlags.none())
 		return;
 
-	auto &trk = this->ply->tracks[trkn];
 	if (trackFlags[TUF_LEN])
 	{
 		int st = this->state;
@@ -414,6 +423,7 @@ static inline int calcVolDivShift(int x)
 	return 4;
 }
 
+// Original FSS Function: Snd_UpdChannel
 void TimerChannel::Update()
 {
 	// Kill active channels that aren't physically active
@@ -446,10 +456,17 @@ void TimerChannel::Update()
 			this->state = CS_ATTACK;
 			// Fall down
 		case CS_ATTACK:
-			this->ampl = (this->ampl * static_cast<int>(this->attackLvl)) / 255;
+		{
+			int newAmpl = this->ampl;
+			int oldAmpl = this->ampl >> 7;
+			do
+				newAmpl = (newAmpl * static_cast<int>(this->attackLvl)) / 256;
+			while ((newAmpl >> 7) == oldAmpl);
+			this->ampl = newAmpl;
 			if (!this->ampl)
 				this->state = CS_DECAY;
 			break;
+		}
 		case CS_DECAY:
 		{
 			this->ampl -= static_cast<int>(this->decayRate);
@@ -463,10 +480,11 @@ void TimerChannel::Update()
 		}
 		case CS_RELEASE:
 			this->ampl -= static_cast<int>(this->releaseRate);
-			if (this->ampl > AMPL_THRESHOLD)
-				break;
-			this->Kill();
-			return;
+			if (this->ampl <= AMPL_THRESHOLD)
+			{
+				this->Kill();
+				return;
+			}
 	}
 
 	if (bModulation && this->modDelayCnt < this->modDelay)
@@ -568,10 +586,7 @@ void TimerChannel::Update()
 			if (bModulation && this->modType == 2)
 				realPan += modParam;
 			realPan += 64;
-			if (realPan < 0)
-				realPan = 0;
-			else if (realPan > 127)
-				realPan = 127;
+			clamp(realPan, 0, 127);
 
 			cr &= ~SOUND_PAN(0x7F);
 			cr |= SOUND_PAN(realPan);
