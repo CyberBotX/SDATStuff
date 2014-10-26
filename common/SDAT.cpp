@@ -634,12 +634,13 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 	// Determine which PLAYERs to keep and are being used by SSEQs we are keeping
 	std::vector<uint32_t> PLAYERsToKeep;
 
+	size_t numPlayers = this->infoSection.PLAYERrecord.entries.size();
 	for (size_t i = 0, num = SSEQsToKeep.size(); i < num; ++i)
 	{
 		uint16_t nonDupPlayer = GetNonDupNumber(this->infoSection.SEQrecord.entries[SSEQsToKeep[i]].ply, duplicatePLAYERs);
 		if (std::find(PLAYERsToKeep.begin(), PLAYERsToKeep.end(), nonDupPlayer) != PLAYERsToKeep.end()) // If the PLAYER is already in the list to keep, then don't add it again
 			continue;
-		if (this->infoSection.PLAYERrecord.entries.size() <= nonDupPlayer) // Somehow, some SDATs can have no players...
+		if (numPlayers <= nonDupPlayer) // Somehow, some SDATs can have no players...
 			continue;
 		PLAYERsToKeep.push_back(nonDupPlayer);
 	}
