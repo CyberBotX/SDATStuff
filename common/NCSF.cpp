@@ -364,7 +364,7 @@ void GetTime(const std::string &filename, const SDAT *sdat, const SSEQ *sseq, Ta
 	if (static_cast<int>(length.time) != -1 && length.type == END)
 	{
 		player.reset(new TimerPlayer());
-		player->sseqVol = sseq->info.vol;
+		player->sseqVol = Cnv_Scale(sseq->info.vol);
 		player->Setup(sseq);
 		player->sbnk = sdat->infoSection.BANKrecord.entries[sseq->info.bank].sbnk;
 		for (int i = 0; i < 4; ++i)

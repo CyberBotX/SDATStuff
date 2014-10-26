@@ -639,6 +639,8 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 		uint16_t nonDupPlayer = GetNonDupNumber(this->infoSection.SEQrecord.entries[SSEQsToKeep[i]].ply, duplicatePLAYERs);
 		if (std::find(PLAYERsToKeep.begin(), PLAYERsToKeep.end(), nonDupPlayer) != PLAYERsToKeep.end()) // If the PLAYER is already in the list to keep, then don't add it again
 			continue;
+		if (this->infoSection.PLAYERrecord.entries.size() <= nonDupPlayer) // Somehow, some SDATs can have no players...
+			continue;
 		PLAYERsToKeep.push_back(nonDupPlayer);
 	}
 
@@ -648,7 +650,7 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 	// If verbosity is turned on, output which files will be kept and which are being removed as duplicates
 	if (verbose)
 	{
-		if (!excludedSSEQs.empty())
+		if (removedExcluded && !excludedSSEQs.empty())
 		{
 			std::cout << "The following SSEQ" << (excludedSSEQs.size() == 1 ? "" : "s") << " were excluded by request:\n";
 			OutputVector(excludedSSEQs, this->infoSection.SEQrecord.entries, this->count > 1);

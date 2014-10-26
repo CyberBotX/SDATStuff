@@ -1,7 +1,7 @@
 /*
  * NDS to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-10-25
+ * Last modification on 2014-10-26
  *
  * Version history:
  *   v1.0 - 2013-03-25 - Initial version
@@ -18,8 +18,12 @@
  *                       filename and data doesn't give any results.
  *   v1.4 - 2014-10-15 - Improved timing system by implementing the random,
  *                       variable, and conditional SSEQ commands.
- *   v1.5 - 2014-10-25 - Save the PLAYER blocks in the SDATs as opposed to
+ *   v1.5 - 2014-10-26 - Save the PLAYER blocks in the SDATs as opposed to
  *                       stripping them.
+ *                     - Detect if the NDS ROM is a DSi ROM and set the prefix
+ *                       of the NCSFLIB accordingly.
+ *                     - Fixed removal of output directory if there are no
+ *                       SSEQs found.
  */
 
 #include "NCSF.h"
@@ -186,6 +190,11 @@ int main(int argc, char *argv[])
 		fileData.ReadLE(gameCodeArray);
 		std::string gameCode = std::string(gameCodeArray, gameCodeArray + 4);
 
+		// Get if the ROM is a DSi ROM or not
+		fileData.pos = 0x180;
+		bool DSi = fileData.ReadLE<uint32_t>() == 0x8D898581u;
+		DSi = DSi || fileData.ReadLE<uint32_t>() == 0x8C888480u;
+
 		// Search for SDATs and merge them into one
 		SDAT finalSDAT;
 		if (options[VERBOSE])
@@ -218,7 +227,7 @@ int main(int argc, char *argv[])
 		// Fail if we do not have any SSEQs (which could also mean that there were no SDATs in the ROM or it wasn't an NDS ROM)
 		if (!finalSDAT.infoSection.SEQrecord.count)
 		{
-			remove(dirName.c_str());
+			rmdir(dirName.c_str());
 			throw std::range_error("Either there were no SSEQs within the SDATs of given NDS ROM, no SDATs in\n  the ROM, or the file was not an NDS ROM.");
 		}
 
@@ -366,7 +375,7 @@ int main(int argc, char *argv[])
 			gameSerial = gameSerial.substr(0, gamedot);
 
 			if (countryCodes.count(gameCode[3]))
-				gameSerial = "NTR-" + gameCode + "-" + countryCodes[gameCode[3]];
+				gameSerial = std::string(DSi ? "TWL" : "NTR") + "-" + gameCode + "-" + countryCodes[gameCode[3]];
 
 			// Make NCSFLIB
 			std::string ncsflibFilename = gameSerial + ".ncsflib";

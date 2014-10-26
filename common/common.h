@@ -19,12 +19,18 @@
 #include <cctype>
 #include <cstdint>
 #include <sys/stat.h>
-#ifdef _WIN32
+#ifdef _MSC_VER
 # include <direct.h>
-# define mkdir(dir, mode) _mkdir((dir))
+# define rmdir(dir) _rmdir((dir))
 # include "win_dirent.h"
 #else
 # include <dirent.h>
+# ifndef _WIN32
+#  include <unistd.h>
+# endif
+#endif
+#ifdef _WIN32
+# define mkdir(dir, mode) _mkdir((dir))
 #endif
 #include "optionparser.h"
 
