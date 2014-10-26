@@ -1,7 +1,7 @@
 /*
  * SDAT - SYMB (Symbol/Filename) Section structures
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2014-10-25
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
@@ -57,7 +57,7 @@ void SYMBRecord::WriteData(PseudoWrite &file) const
 		file.WriteLE(this->entries[i]);
 }
 
-SYMBSection::SYMBSection() : size(0), SEQrecord(), BANKrecord(), WAVEARCrecord()
+SYMBSection::SYMBSection() : size(0), SEQrecord(), BANKrecord(), WAVEARCrecord(), PLAYERrecord()
 {
 	memcpy(this->type, "SYMB", sizeof(this->type));
 	memset(this->recordOffsets, 0, sizeof(this->recordOffsets));
@@ -86,14 +86,20 @@ void SYMBSection::Read(PseudoReadFile &file)
 		file.pos = startOfSYMB + this->recordOffsets[REC_WAVEARC];
 		this->WAVEARCrecord.Read(file, startOfSYMB);
 	}
+	if (this->recordOffsets[REC_PLAYER])
+	{
+		file.pos = startOfSYMB + this->recordOffsets[REC_PLAYER];
+		this->PLAYERrecord.Read(file, startOfSYMB);
+	}
 }
 
 uint32_t SYMBSection::Size() const
 {
-	uint32_t sectionSize = 84; // type + size + record offsets + reserved + 5 * unused records
+	uint32_t sectionSize = 80; // type + size + record offsets + reserved + 4 * unused records
 	sectionSize += this->SEQrecord.Size();
 	sectionSize += this->BANKrecord.Size();
 	sectionSize += this->WAVEARCrecord.Size();
+	sectionSize += this->PLAYERrecord.Size();
 	return sectionSize;
 }
 
@@ -104,7 +110,7 @@ void SYMBSection::FixOffsets()
 	this->recordOffsets[REC_BANK] = this->recordOffsets[REC_SEQARC] + 4;
 	this->recordOffsets[REC_WAVEARC] = this->recordOffsets[REC_BANK] + 4 + 4 * this->BANKrecord.count;
 	this->recordOffsets[REC_PLAYER] = this->recordOffsets[REC_WAVEARC] + 4 + 4 * this->WAVEARCrecord.count;
-	this->recordOffsets[REC_GROUP] = this->recordOffsets[REC_PLAYER] + 4;
+	this->recordOffsets[REC_GROUP] = this->recordOffsets[REC_PLAYER] + 4 + 4 * this->PLAYERrecord.count;
 	this->recordOffsets[REC_PLAYER2] = this->recordOffsets[REC_GROUP] + 4;
 	this->recordOffsets[REC_STRM] = this->recordOffsets[REC_PLAYER2] + 4;
 	uint32_t offset = this->recordOffsets[REC_STRM] + 4;
@@ -113,6 +119,8 @@ void SYMBSection::FixOffsets()
 	this->BANKrecord.FixOffsets(offset);
 	offset += this->BANKrecord.Size() - 4 - 4 * this->BANKrecord.count;
 	this->WAVEARCrecord.FixOffsets(offset);
+	offset += this->WAVEARCrecord.Size() - 4 - 4 * this->WAVEARCrecord.count;
+	this->PLAYERrecord.FixOffsets(offset);
 }
 
 void SYMBSection::Write(PseudoWrite &file) const
@@ -126,11 +134,13 @@ void SYMBSection::Write(PseudoWrite &file) const
 	file.WriteLE<uint32_t>(0);
 	this->BANKrecord.WriteHeader(file);
 	this->WAVEARCrecord.WriteHeader(file);
-	uint32_t other[4] = { };
+	this->PLAYERrecord.WriteHeader(file);
+	uint32_t other[3] = { };
 	file.WriteLE(other);
 	this->SEQrecord.WriteData(file);
 	this->BANKrecord.WriteData(file);
 	this->WAVEARCrecord.WriteData(file);
+	this->PLAYERrecord.WriteData(file);
 	uint32_t sizeMulOf4 = (this->size + 3) & ~0x03;
 	if (this->size != sizeMulOf4)
 		for (uint32_t i = 0; i < sizeMulOf4 - this->size; ++i)

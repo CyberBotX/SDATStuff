@@ -1,7 +1,7 @@
 /*
  * NDS to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-10-15
+ * Last modification on 2014-10-25
  *
  * Version history:
  *   v1.0 - 2013-03-25 - Initial version
@@ -18,11 +18,13 @@
  *                       filename and data doesn't give any results.
  *   v1.4 - 2014-10-15 - Improved timing system by implementing the random,
  *                       variable, and conditional SSEQ commands.
+ *   v1.5 - 2014-10-25 - Save the PLAYER blocks in the SDATs as opposed to
+ *                       stripping them.
  */
 
 #include "NCSF.h"
 
-static const std::string NDSTONCSF_VERSION = "1.4";
+static const std::string NDSTONCSF_VERSION = "1.5";
 
 enum { UNKNOWN, HELP, VERBOSE, TIME, FADELOOP, FADEONESHOT, EXCLUDE, INCLUDE, AUTO, NOCOPY };
 const option::Descriptor opts[] =

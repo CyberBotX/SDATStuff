@@ -1,7 +1,7 @@
 /*
  * SDAT Strip
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-10-15
+ * Last modification on 2014-10-25
  *
  * NOTE: This version has been superceded by NDS to NCSF instead.
  *
@@ -10,12 +10,14 @@
  *   v1.1 - 2013-03-26 - Merged verbosity of SDAT stripping into the SDAT class
  *                       and removed the static Strip function from this.
  *                     - Copied NDS to NCSF's include/exclude handling to here.
+ *   v1.2 - 2014-10-25 - Save the PLAYER blocks in the SDATs as opposed to
+ *                       stripping them.
  */
 
 #include <map>
 #include "SDAT.h"
 
-static const std::string SDATSTRIP_VERSION = "1.1";
+static const std::string SDATSTRIP_VERSION = "1.2";
 
 enum { UNKNOWN, HELP, VERBOSE, FORCE, EXCLUDE, INCLUDE };
 const option::Descriptor opts[] =

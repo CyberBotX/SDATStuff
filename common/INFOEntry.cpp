@@ -1,7 +1,7 @@
 /*
  * SDAT - INFO Entry structures
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-25
+ * Last modification on 2014-10-25
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
@@ -171,4 +171,43 @@ void INFOEntryWAVEARC::Write(PseudoWrite &file) const
 {
 	file.WriteLE(this->fileID);
 	file.WriteLE(this->unknown);
+}
+
+INFOEntryPLAYER::INFOEntryPLAYER() : INFOEntry(), maxSeqs(0), channelMask(0), heapSize(0)
+{
+}
+
+INFOEntryPLAYER::INFOEntryPLAYER(const INFOEntryPLAYER &entry) : INFOEntry(entry), maxSeqs(entry.maxSeqs), channelMask(entry.channelMask), heapSize(entry.heapSize)
+{
+}
+
+INFOEntryPLAYER &INFOEntryPLAYER::operator=(const INFOEntryPLAYER &entry)
+{
+	if (this != &entry)
+	{
+		INFOEntry::operator=(entry);
+		this->maxSeqs = entry.maxSeqs;
+		this->channelMask = entry.channelMask;
+		this->heapSize = entry.heapSize;
+	}
+	return *this;
+}
+
+void INFOEntryPLAYER::Read(PseudoReadFile &file)
+{
+	this->maxSeqs = file.ReadLE<uint16_t>();
+	this->channelMask = file.ReadLE<uint16_t>();
+	this->heapSize = file.ReadLE<uint32_t>();
+}
+
+uint32_t INFOEntryPLAYER::Size() const
+{
+	return 8;
+}
+
+void INFOEntryPLAYER::Write(PseudoWrite &file) const
+{
+	file.WriteLE(this->maxSeqs);
+	file.WriteLE(this->channelMask);
+	file.WriteLE(this->heapSize);
 }

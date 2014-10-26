@@ -1,7 +1,7 @@
 /*
  * SDAT - SDAT structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-30
+ * Last modification on 2014-10-25
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
@@ -196,6 +196,16 @@ void SDAT::Read(const std::string &fn, PseudoReadFile &file, bool shouldFailOnMi
 		this->infoSection.WAVEARCrecord.entries[i].swar = newSWAR.get();
 		this->SWARs.push_back(std::move(newSWAR));
 	}
+	for (size_t i = 0, entries = this->infoSection.PLAYERrecord.entries.size(); i < entries; ++i)
+	{
+		if (!this->infoSection.PLAYERrecord.entryOffsets[i])
+			continue;
+		std::string origName = "PLAYER" + NumToHexString<uint8_t>(i).substr(2);
+		if (this->SYMBOffset)
+			origName = this->symbSection.PLAYERrecord.entries[i];
+		this->infoSection.PLAYERrecord.entries[i].origFilename = origName;
+		this->infoSection.PLAYERrecord.entries[i].sdatNumber = this->filename;
+	}
 }
 
 void SDAT::Write(PseudoWrite &file) const
@@ -246,7 +256,7 @@ SDAT &SDAT::operator+=(const SDAT &other)
 		return *this;
 
 	uint32_t origSEQcount = this->infoSection.SEQrecord.count, origBANKcount = this->infoSection.BANKrecord.count,
-		origWAVEARCcount = this->infoSection.WAVEARCrecord.count;
+		origWAVEARCcount = this->infoSection.WAVEARCrecord.count, origPLAYERcount = this->infoSection.PLAYERrecord.count;
 	if (this->SYMBOffset || other.SYMBOffset)
 	{
 		this->symbSection.SEQrecord.count = this->infoSection.SEQrecord.count + other.infoSection.SEQrecord.count;
@@ -269,6 +279,13 @@ SDAT &SDAT::operator+=(const SDAT &other)
 		if (other.SYMBOffset)
 			std::copy(other.symbSection.WAVEARCrecord.entries.begin(), other.symbSection.WAVEARCrecord.entries.end(),
 				this->symbSection.WAVEARCrecord.entries.begin() + origWAVEARCcount);
+
+		this->symbSection.PLAYERrecord.count = this->infoSection.PLAYERrecord.count + other.infoSection.PLAYERrecord.count;
+		this->symbSection.PLAYERrecord.entryOffsets.resize(this->symbSection.PLAYERrecord.count, 0);
+		this->symbSection.PLAYERrecord.entries.resize(this->symbSection.PLAYERrecord.count, "");
+		if (other.SYMBOffset)
+			std::copy(other.symbSection.PLAYERrecord.entries.begin(), other.symbSection.PLAYERrecord.entries.end(),
+			this->symbSection.PLAYERrecord.entries.begin() + origPLAYERcount);
 
 		this->symbSectionNeedsCleanup = true;
 
@@ -335,6 +352,14 @@ SDAT &SDAT::operator+=(const SDAT &other)
 			this->SWARs.push_back(std::move(newSWAR));
 		}
 	}
+
+	this->infoSection.PLAYERrecord.count = this->infoSection.PLAYERrecord.count + other.infoSection.PLAYERrecord.count;
+	this->infoSection.PLAYERrecord.entryOffsets.resize(this->infoSection.PLAYERrecord.count, 0);
+	std::copy(other.infoSection.PLAYERrecord.entryOffsets.begin(), other.infoSection.PLAYERrecord.entryOffsets.end(),
+		this->infoSection.PLAYERrecord.entryOffsets.begin() + origPLAYERcount);
+	this->infoSection.PLAYERrecord.entries.resize(this->infoSection.PLAYERrecord.count);
+	for (size_t i = origPLAYERcount; i < this->infoSection.PLAYERrecord.count; ++i)
+		this->infoSection.PLAYERrecord.entries[i] = other.infoSection.PLAYERrecord.entries[i - origPLAYERcount];
 
 	uint32_t origFileCount = this->fatSection.count;
 	this->fatSection.count += other.fatSection.count;
@@ -407,6 +432,33 @@ template<typename T, typename U, typename V> static inline void OutputMap(const 
 // removes anything that is not an SSEQ, SBNK, or SWAR.
 void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removedExcluded)
 {
+	// Search for duplicate PLAYERs
+	Duplicates duplicatePLAYERs;
+
+	for (size_t i = 0, entries = this->infoSection.PLAYERrecord.entries.size(); i < entries; ++i)
+	{
+		if (!this->infoSection.PLAYERrecord.entryOffsets[i]) // Skip empty offsets
+			continue;
+		auto alreadyFound = std::find_if(duplicatePLAYERs.begin(), duplicatePLAYERs.end(), std::bind2nd(findInVector, i));
+		if (alreadyFound != duplicatePLAYERs.end()) // Already added as a duplicate of another PLAYER, skip it
+			continue;
+		uint16_t imaxSeqs = this->infoSection.PLAYERrecord.entries[i].maxSeqs;
+		uint16_t ichannelMask = this->infoSection.PLAYERrecord.entries[i].channelMask;
+		uint32_t iheapSize = this->infoSection.PLAYERrecord.entries[i].heapSize;
+		std::vector<uint32_t> duplicates;
+		for (size_t j = i + 1; j < entries; ++j)
+		{
+			if (!this->infoSection.PLAYERrecord.entryOffsets[j]) // Skip empty offsets
+				continue;
+			if (imaxSeqs != this->infoSection.PLAYERrecord.entries[j].maxSeqs || ichannelMask != this->infoSection.PLAYERrecord.entries[j].channelMask ||
+				iheapSize != this->infoSection.PLAYERrecord.entries[j].heapSize) // Player data is different, not duplicates, skip it
+				continue;
+			duplicates.push_back(j);
+		}
+		if (!duplicates.empty())
+			duplicatePLAYERs.insert(std::make_pair(i, duplicates));
+	}
+
 	// Search for duplicate SWARs
 	Duplicates duplicateSWARs;
 
@@ -579,6 +631,20 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 	// Sort the list of SWARs to keep
 	std::sort(SWARsToKeep.begin(), SWARsToKeep.end());
 
+	// Determine which PLAYERs to keep and are being used by SSEQs we are keeping
+	std::vector<uint32_t> PLAYERsToKeep;
+
+	for (size_t i = 0, num = SSEQsToKeep.size(); i < num; ++i)
+	{
+		uint16_t nonDupPlayer = GetNonDupNumber(this->infoSection.SEQrecord.entries[SSEQsToKeep[i]].ply, duplicatePLAYERs);
+		if (std::find(PLAYERsToKeep.begin(), PLAYERsToKeep.end(), nonDupPlayer) != PLAYERsToKeep.end()) // If the PLAYER is already in the list to keep, then don't add it again
+			continue;
+		PLAYERsToKeep.push_back(nonDupPlayer);
+	}
+
+	// Sort the list of PLAYERs to keep
+	std::sort(PLAYERsToKeep.begin(), PLAYERsToKeep.end());
+
 	// If verbosity is turned on, output which files will be kept and which are being removed as duplicates
 	if (verbose)
 	{
@@ -609,6 +675,13 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 			OutputMap(duplicateSWARs, this->infoSection.WAVEARCrecord.entries, this->count > 1);
 			std::cout << "\n";
 		}
+
+		if (!duplicatePLAYERs.empty())
+		{
+			std::cout << "The following PLAYER" << (duplicatePLAYERs.size() != 1 ? "s" : "") << " had duplicates, the duplicates will be removed:\n";
+			OutputMap(duplicatePLAYERs, this->infoSection.PLAYERrecord.entries, this->count > 1);
+			std::cout << "\n";
+		}
 	}
 
 	// Figure out where the remaining SBNKs will be once moved
@@ -622,6 +695,12 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 
 	for (size_t i = 0, num = SWARsToKeep.size(); i < num; ++i)
 		SWARMove[SWARsToKeep[i]] = i;
+
+	// Figure out where the remaining PLAYERs wil be once moved
+	std::map<uint32_t, uint32_t> PLAYERMove;
+
+	for (size_t i = 0, num = PLAYERsToKeep.size(); i < num; ++i)
+		PLAYERMove[PLAYERsToKeep[i]] = i;
 
 	// Remove all unused items (or rather, save only used items)
 	SYMBSection newSymbSection;
@@ -638,6 +717,10 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 		newSymbSection.WAVEARCrecord.count = SWARsToKeep.size();
 		newSymbSection.WAVEARCrecord.entryOffsets.resize(newSymbSection.WAVEARCrecord.count);
 		newSymbSection.WAVEARCrecord.entries.resize(newSymbSection.WAVEARCrecord.count);
+
+		newSymbSection.PLAYERrecord.count = PLAYERsToKeep.size();
+		newSymbSection.PLAYERrecord.entryOffsets.resize(newSymbSection.PLAYERrecord.count);
+		newSymbSection.PLAYERrecord.entries.resize(newSymbSection.PLAYERrecord.count);
 	}
 
 	INFOSection newInfoSection;
@@ -654,6 +737,10 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 	newInfoSection.WAVEARCrecord.entryOffsets.resize(newInfoSection.WAVEARCrecord.count);
 	newInfoSection.WAVEARCrecord.entries.resize(newInfoSection.WAVEARCrecord.count);
 
+	newInfoSection.PLAYERrecord.count = PLAYERsToKeep.size();
+	newInfoSection.PLAYERrecord.entryOffsets.resize(newInfoSection.PLAYERrecord.count);
+	newInfoSection.PLAYERrecord.entries.resize(newInfoSection.PLAYERrecord.count);
+
 	std::vector<std::unique_ptr<SSEQ>> newSSEQs;
 	uint16_t fileID = 0;
 	for (size_t i = 0, num = SSEQsToKeep.size(); i < num; ++i)
@@ -665,6 +752,8 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 		newInfoSection.SEQrecord.entries[i].fileID = fileID++;
 		uint16_t nonDupBank = GetNonDupNumber(newInfoSection.SEQrecord.entries[i].bank, duplicateSBNKs);
 		newInfoSection.SEQrecord.entries[i].bank = SBNKMove[nonDupBank];
+		uint16_t nonDupPlayer = GetNonDupNumber(newInfoSection.SEQrecord.entries[i].ply, duplicatePLAYERs);
+		newInfoSection.SEQrecord.entries[i].ply = PLAYERMove[nonDupPlayer];
 		auto sseq = std::find_if(this->SSEQs.begin(), this->SSEQs.end(), [&](const std::unique_ptr<SSEQ> &thisSSEQ)
 		{
 			return thisSSEQ.get() == newInfoSection.SEQrecord.entries[i].sseq;
@@ -717,6 +806,14 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 		(*swar)->entryNumber = i;
 		newSWARs.push_back(std::move(*swar));
 		this->SWARs.erase(swar);
+	}
+
+	for (size_t i = 0, num = PLAYERsToKeep.size(); i < num; ++i)
+	{
+		if (this->SYMBOffset)
+			newSymbSection.PLAYERrecord.entries[i] = this->symbSection.PLAYERrecord.entries[PLAYERsToKeep[i]];
+
+		newInfoSection.PLAYERrecord.entries[i] = this->infoSection.PLAYERrecord.entries[PLAYERsToKeep[i]];
 	}
 
 	if (this->SYMBOffset)
@@ -809,6 +906,12 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 				continue;
 			fileID = this->infoSection.WAVEARCrecord.entries[i].fileID;
 			this->symbSection.WAVEARCrecord.entries[i] = "SWAR" + NumToHexString(fileID).substr(2);
+		}
+		for (uint32_t i = 0, num = PLAYERsToKeep.size(); i < num; ++i)
+		{
+			if (!this->symbSection.PLAYERrecord.entries[i].empty())
+				continue;
+			this->symbSection.PLAYERrecord.entries[i] = "PLAYER" + NumToHexString<uint8_t>(i).substr(2);
 		}
 	}
 }

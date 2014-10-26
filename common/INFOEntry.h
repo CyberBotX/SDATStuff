@@ -1,7 +1,7 @@
 /*
  * SDAT - INFO Entry structures
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-10-15
+ * Last modification on 2014-10-25
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
@@ -82,6 +82,21 @@ struct INFOEntryWAVEARC : INFOEntry
 	INFOEntryWAVEARC();
 	INFOEntryWAVEARC(const INFOEntryWAVEARC &entry);
 	INFOEntryWAVEARC &operator=(const INFOEntryWAVEARC &entry);
+
+	void Read(PseudoReadFile &file);
+	uint32_t Size() const;
+	void Write(PseudoWrite &file) const;
+};
+
+struct INFOEntryPLAYER : INFOEntry
+{
+	uint16_t maxSeqs;
+	uint16_t channelMask;
+	uint32_t heapSize;
+
+	INFOEntryPLAYER();
+	INFOEntryPLAYER(const INFOEntryPLAYER &entry);
+	INFOEntryPLAYER &operator=(const INFOEntryPLAYER &entry);
 
 	void Read(PseudoReadFile &file);
 	uint32_t Size() const;
