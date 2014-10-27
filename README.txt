@@ -9,6 +9,9 @@ team for their open-source Nintendo DS emulator.
 2SF Tags to NCSF Version History
 --------------------------------
 v1.0 - 2013-03-30 - Initial Version
+v1.1 - 2012-03-30 - Added option to rename the NCSFs, requested by Knurek.
+v1.2 - 2012-04-10 - Made it so a file is not overwritten when renaming if
+                    a duplicate is found.
 
 NDS to NCSF Version History
 ---------------------------
@@ -24,6 +27,14 @@ v1.3 - 2013-03-30 - Only remove files from the destination directory that
                   - Slightly better file checking when copying from an
                     existing SDAT, will check by data only if checking by
                     filename and data doesn't give any results.
+v1.4 - 2014-10-15 - Improved timing system by implementing the random,
+                    variable, and conditional SSEQ commands.
+v1.5 - 2014-10-26 - Save the PLAYER blocks in the SDATs as opposed to
+                    stripping them.
+                  - Detect if the NDS ROM is a DSi ROM and set the prefix
+                    of the NCSFLIB accordingly.
+                  - Fixed removal of output directory if there are no
+                    SSEQs found.
 
 SDAT Strip Version History
 --------------------------
@@ -31,25 +42,29 @@ v1.0 - 2013-03-25 - Initial Version
 v1.1 - 2013-03-26 - Merged verbosity of SDAT stripping into the SDAT class
                     and removed the static Strip function from this.
                   - Copied NDS to NCSF's include/exclude handling to here.
+v1.2 - 2014-10-25 - Save the PLAYER blocks in the SDATs as opposed to
+                    stripping them.
 
 SDAT to NCSF Version History
 ----------------------------
 v1.0 - 2013-03-25 - Initial Version
 v1.1 - 2013-03-28 - Made timing to be on by default, with 2 loops.
                   - Added options to change the fade times.
+v1.2 - 2014-10-15 - Improved timing system by implementing the random,
+                    variable, and conditional SSEQ commands.
 
 These utilities are used to work with SDAT files from Nintendo DS ROMs.  SDATs are
 created through Nitro Composor, a program in the Nintendo Nitro SDK for the DS.
 NCSF is a PSF-style music format that uses the SDAT as it's "program".
 
 Contains:
-* 2SF Tags to NCSF v1.0 - A utility to copy tags from a 2SF set into an NCSF set.
-*      NDS to NCSF v1.3 - A utility to take a Nintendo DS ROM and create an NCSF out of it.
-*       SDAT Strip v1.1 - A utility to take an SDAT and strip it of all unneccesary items.
+* 2SF Tags to NCSF v1.2 - A utility to copy tags from a 2SF set into an NCSF set.
+*      NDS to NCSF v1.5 - A utility to take a Nintendo DS ROM and create an NCSF out of it.
+*       SDAT Strip v1.2 - A utility to take an SDAT and strip it of all unneccesary items.
                           (NOTE: Superceded by NDS to NCSF.)
-*     SDAT to NCSF v1.1 - A utility to take an SDAT and create an NCSF out of it.
+*     SDAT to NCSF v1.2 - A utility to take an SDAT and create an NCSF out of it.
                           (NOTE: Superceded by NDS to NCSF.)
-*        zlib DLL v1.25 - Required by 2SF Tags to NCSF, NDS to NCSF, and SDAT to NCSF.
+*       zlib DLL v1.2.8 - Required by 2SF Tags to NCSF, NDS to NCSF, and SDAT to NCSF.
 
 WINDOWS
 -------
