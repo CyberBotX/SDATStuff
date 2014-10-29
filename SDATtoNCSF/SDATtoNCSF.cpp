@@ -22,15 +22,15 @@ enum { UNKNOWN, HELP, VERBOSE, TIME, FADELOOP, FADEONESHOT };
 const option::Descriptor opts[] =
 {
 	option::Descriptor(UNKNOWN, 0, "", "", option::Arg::None, "SDAT to NCSF v" + SDATTONCSF_VERSION + "\nBy Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]\n\n"
-		"SDAT to NCSF will take the incoming SDAT and create a series of NCSF files.  If there is only a single SSEQ within the SDAT, then there will be a "
-			"single NCSF file.  Otherwise, there will be an NCSFLIB and multiple MININCSFs.\n\n"
+		"SDAT to NCSF will take the incoming SDAT and create a series of NCSF files. If there is only a single SSEQ within the SDAT, then there will be a "
+			"single NCSF file. Otherwise, there will be an NCSFLIB and multiple MININCSFs.\n\n"
 		"Usage:\n"
 		"  SDATtoNCSF [options] <Input SDAT filename>\n\n"
 		"Options:"),
 	option::Descriptor(HELP, 0, "h", "help", option::Arg::None, "  --help,-h \tPrint usage and exit."),
 	option::Descriptor(VERBOSE, 0, "v", "verbose", option::Arg::None, "  --verbose,-v \tVerbose output."),
 	option::Descriptor(TIME, 0, "t", "time", RequireNumericArgument,
-		"  --time,-t \tCalculate time on each track to the number of loops given.  Defaults to 2 loops.  0 will disable timing."),
+		"  --time,-t \tCalculate time on each track to the number of loops given. Defaults to 2 loops. 0 will disable timing."),
 	option::Descriptor(FADELOOP, 0, "l", "fade-loop", RequireNumericArgument, "  --fade-loop,-l \tSet the fade time for looping tracks, in seconds, defaults to 10."),
 	option::Descriptor(FADEONESHOT, 0, "o", "fade-one-shot", RequireNumericArgument, "  --fade-one-shot,-o \tSet the fade time for one-shot tracks, in seconds, defaults to 0."),
 	option::Descriptor(UNKNOWN, 0, "", "", option::Arg::None, "\nVerbose output will output the NCSFs created.\n\nTiming uses code based on FeOS Sound System by fincs."),

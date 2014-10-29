@@ -34,33 +34,33 @@ enum { UNKNOWN, HELP, VERBOSE, TIME, FADELOOP, FADEONESHOT, EXCLUDE, INCLUDE, AU
 const option::Descriptor opts[] =
 {
 	option::Descriptor(UNKNOWN, 0, "", "", option::Arg::None, "NDS to NCSF v" + NDSTONCSF_VERSION + "\nBy Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]\n\n"
-		"NDS to NCSF will take the incoming NDS ROM and create a series of NCSF files.  If there is only a single SSEQ within the entire ROM, then there will be a "
-			"single NCSF file.  Otherwise, there will be an NCSFLIB and multiple MININCSFs.\n\n"
+		"NDS to NCSF will take the incoming NDS ROM and create a series of NCSF files. If there is only a single SSEQ within the entire ROM, then there will be a "
+			"single NCSF file. Otherwise, there will be an NCSFLIB and multiple MININCSFs.\n\n"
 		"Usage:\n"
 		"  NDStoNCSF [options] <Input SDAT filename>\n\n"
 		"Options:"),
 	option::Descriptor(HELP, 0, "h", "help", option::Arg::None, "  --help,-h \tPrint usage and exit."),
 	option::Descriptor(VERBOSE, 0, "v", "verbose", option::Arg::None, "  --verbose,-v \tVerbose output."),
 	option::Descriptor(TIME, 0, "t", "time", RequireNumericArgument,
-		"  --time,-t \tCalculate time on each track to the number of loops given.  Defaults to 2 loops.  0 will disable timing."),
+		"  --time,-t \tCalculate time on each track to the number of loops given. Defaults to 2 loops. 0 will disable timing."),
 	option::Descriptor(FADELOOP, 0, "l", "fade-loop", RequireNumericArgument, "  --fade-loop,-l \tSet the fade time for looping tracks, in seconds, defaults to 10."),
 	option::Descriptor(FADEONESHOT, 0, "o", "fade-one-shot", RequireNumericArgument, "  --fade-one-shot,-o \tSet the fade time for one-shot tracks, in seconds, defaults to 0."),
 	option::Descriptor(EXCLUDE, 0, "x", "exclude", RequireArgument,
-		"  --exclude=<filename> \v         -x <filename> \tExclude the given filename from the final SDAT.  May use * and ? wildcards."),
+		"  --exclude=<filename> \v         -x <filename> \tExclude the given filename from the final SDAT. May use * and ? wildcards."),
 	option::Descriptor(INCLUDE, 0, "i", "include", RequireArgument,
-		"  --include=<filename> \v         -i <filename> \tInclude the given filename in the final SDAT.  May use * and ? wildcards."),
+		"  --include=<filename> \v         -i <filename> \tInclude the given filename in the final SDAT. May use * and ? wildcards."),
 	option::Descriptor(AUTO, 0, "a", "auto", option::Arg::None, "  --auto,-a \tFully automatic mode (disables interactive mode)."),
 	option::Descriptor(NOCOPY, 0, "n", "nocopy", option::Arg::None, "  --nocopy,-n \tDo not check for previous files in the destination directory."),
 	option::Descriptor(UNKNOWN, 0, "", "", option::Arg::None,
-		"\nVerbose output will output the NCSFs created.  If given more than once, verbose output will also output duplicates found during the SDAT stripping step."
-		"\n\nExcluded and included files will be processed in the order they are given on the command line, later arguments overriding earlier arguments.  If there is more "
+		"\nVerbose output will output the NCSFs created. If given more than once, verbose output will also output duplicates found during the SDAT stripping step."
+		"\n\nExcluded and included files will be processed in the order they are given on the command line, later arguments overriding earlier arguments. If there is more "
 			"than 1 SDAT contained within the NDS ROM, you can exclude or include based on the SDAT by prefixing the filename with the SDAT number (1-based) and a forward "
-			"slash.  For example, if the NDS ROM has 2 SDATs and both contain a file called XYZ, but you only want XYZ from the 2nd SDAT, use 1/XYZ as an exclude.  Wildcards "
+			"slash. For example, if the NDS ROM has 2 SDATs and both contain a file called XYZ, but you only want XYZ from the 2nd SDAT, use 1/XYZ as an exclude. Wildcards "
 			"before the forward slash are also accepted."
-		"\n\nIf --auto or -a are not given, the program will run in interactive mode, asking to confirm which sequences to keep.  (NOTE: Even in interactive mode, files "
+		"\n\nIf --auto or -a are not given, the program will run in interactive mode, asking to confirm which sequences to keep. (NOTE: Even in interactive mode, files "
 			"which were excluded or included on the command line will still be automatically set as such.)"
-		"\n\nIf --nocopy or -n are not given, the program will use information from a previous run of NDS to NCSF, if any exists.  This will set files that were not in the "
-			"previous run's SDAT as being excluded by default and it will also attempt to copy tags from the previous files.  (NOTE: This may not work if the original "
+		"\n\nIf --nocopy or -n are not given, the program will use information from a previous run of NDS to NCSF, if any exists. This will set files that were not in the "
+			"previous run's SDAT as being excluded by default and it will also attempt to copy tags from the previous files. (NOTE: This may not work if the original "
 			"SDAT did not contain a symbol record, mainly because filename matching cannot be done.)"
 		"\n\nTiming uses code based on FeOS Sound System by fincs, as well as code from DeSmuME for pseudo-playback."),
 	option::Descriptor()
@@ -160,16 +160,21 @@ int main(int argc, char *argv[])
 						{
 							std::string filename = GetFilenameFromPath(*curr);
 							TagList tags = GetTagsFromPSF(ncsfFileData, 0x25);
-							if (tags.Exists("origFilename"))
+							// If 2SF to NCSF was used, don't use the tags for this file at all,
+							// they might not be valid for use with NDS to NCSF's purposes.
+							if (tags.Exists("ncsfby") && tags["ncsfby"] != "2SF to NCSF")
 							{
-								std::string fullOrigFilename = tags["origFilename"];
-								if (tags.Exists("origSDAT"))
-									fullOrigFilename = tags["origSDAT"] + "/" + fullOrigFilename;
-								savedTags[fullOrigFilename] = tags;
-								filenames[fullOrigFilename] = filename;
+								if (tags.Exists("origFilename"))
+								{
+									std::string fullOrigFilename = tags["origFilename"];
+									if (tags.Exists("origSDAT"))
+										fullOrigFilename = tags["origSDAT"] + "/" + fullOrigFilename;
+									savedTags[fullOrigFilename] = tags;
+									filenames[fullOrigFilename] = filename;
+								}
+								else
+									savedTags[filename] = tags;
 							}
-							else
-								savedTags[filename] = tags;
 						}
 					}
 					catch (const std::exception &)

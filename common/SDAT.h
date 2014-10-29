@@ -51,6 +51,8 @@ struct SDAT
 	void Read(const std::string &fn, PseudoReadFile &file, bool shouldFailOnMissingFiles = true);
 	void Write(PseudoWrite &file) const;
 
+	SDAT MakeFromSSEQ(uint16_t SSEQNumber) const;
+
 	SDAT &operator+=(const SDAT &other);
 	void Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removeExcluded = true);
 };

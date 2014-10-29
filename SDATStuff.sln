@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NDStoNCSF", "NDStoNCSF\NDSt
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "2SFTagsToNCSF", "2SFTagsToNCSF\2SFTagsToNCSF.vcxproj", "{D09C8931-0A54-4328-8093-4B083C36860C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "2SFtoNCSF", "2SFtoNCSF\2SFtoNCSF.vcxproj", "{E0A4E2AC-4DD5-4721-9E0D-07221218DA68}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -37,6 +39,10 @@ Global
 		{D09C8931-0A54-4328-8093-4B083C36860C}.Debug|Win32.Build.0 = Debug|Win32
 		{D09C8931-0A54-4328-8093-4B083C36860C}.Release|Win32.ActiveCfg = Release|Win32
 		{D09C8931-0A54-4328-8093-4B083C36860C}.Release|Win32.Build.0 = Release|Win32
+		{E0A4E2AC-4DD5-4721-9E0D-07221218DA68}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E0A4E2AC-4DD5-4721-9E0D-07221218DA68}.Debug|Win32.Build.0 = Debug|Win32
+		{E0A4E2AC-4DD5-4721-9E0D-07221218DA68}.Release|Win32.ActiveCfg = Release|Win32
+		{E0A4E2AC-4DD5-4721-9E0D-07221218DA68}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

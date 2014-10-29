@@ -23,8 +23,8 @@ enum { UNKNOWN, HELP, VERBOSE, FORCE, EXCLUDE, INCLUDE };
 const option::Descriptor opts[] =
 {
 	option::Descriptor(UNKNOWN, 0, "", "", option::Arg::None, "SDAT Strip v" + SDATSTRIP_VERSION + "\nBy Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]\n\n"
-		"SDAT Strip will remove all duplicated SSEQs, SBNKs, and SWARs from the input SDAT.  It will also keep only SBNKs used by the remaining SSEQs and keep "
-			"only SWARs used by the remaining SBNKs.  SSARs and STRMs are not kept.  Any gaps in the SYMB/INFO sections of the SDAT will also be removed.\n\n"
+		"SDAT Strip will remove all duplicated SSEQs, SBNKs, and SWARs from the input SDAT. It will also keep only SBNKs used by the remaining SSEQs and keep "
+			"only SWARs used by the remaining SBNKs. SSARs and STRMs are not kept. Any gaps in the SYMB/INFO sections of the SDAT will also be removed.\n\n"
 		"Usage:\n"
 		"  SDATStrip [options] <Input SDAT filename> [...] <Output SDAT filename>\n"
 		"  (More than one input file can be given, they will be merged into the output.)\n\n"
@@ -33,15 +33,15 @@ const option::Descriptor opts[] =
 	option::Descriptor(VERBOSE, 0, "v", "verbose", option::Arg::None, "  --verbose,-v \tVerbose output."),
 	option::Descriptor(FORCE, 0, "f", "force", option::Arg::None, "  --force,-f \tForce overwrite of output file if it is the same as the input file."),
 	option::Descriptor(EXCLUDE, 0, "x", "exclude", RequireArgument,
-		"  --exclude=<filename> \v         -x <filename> \tExclude the given filename from the final SDAT.  May use * and ? wildcards."),
+		"  --exclude=<filename> \v         -x <filename> \tExclude the given filename from the final SDAT. May use * and ? wildcards."),
 	option::Descriptor(INCLUDE, 0, "i", "include", RequireArgument,
-		"  --include=<filename> \v         -i <filename> \tInclude the given filename in the final SDAT.  May use * and ? wildcards."),
+		"  --include=<filename> \v         -i <filename> \tInclude the given filename in the final SDAT. May use * and ? wildcards."),
 	option::Descriptor(UNKNOWN, 0, "", "", option::Arg::None,
 		"\nVerbose output will tell you which SSEQs, SBNKS, and SWARs will be kept and which will be removed due to duplicates."
-		"\n\nExcluded and included files will be processed in the order they are given on the command line, later arguments overriding earlier arguments.  If there is more "
-			"than 1 SDAT contained within the NDS ROM, you can exclude or include based on the SDAT by prefixing the filename with the SDAT number (1-based) and a forward "
-			"slash.  For example, if the NDS ROM has 2 SDATs and both contain a file called XYZ, but you only want XYZ from the 2nd SDAT, use 1/XYZ as an exclude.  Wildcards "
-			"before the forward slash are also accepted."),
+		"\n\nExcluded and included files will be processed in the order they are given on the command line, later arguments overriding earlier arguments. If there is more "
+			"than 1 SDAT given, you can exclude or include based on the SDAT by prefixing the filename with the SDAT number (1-based) and a forward slash. For example, if "
+			"there are 2 SDATs and both contain a file called XYZ, but you only want XYZ from the 2nd SDAT, use 1/XYZ as an exclude. Wildcards before the forward slash are "
+			"also accepted."),
 	option::Descriptor()
 };
 

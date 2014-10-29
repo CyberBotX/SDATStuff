@@ -1,7 +1,7 @@
 /*
  * 2SF Tags to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-10-15
+ * Last modification on 2014-10-29
  *
  * Version history:
  *   v1.0 - 2013-03-30 - Initial version
@@ -19,7 +19,7 @@ enum { UNKNOWN, HELP, VERBOSE, EXCLUDETAG, RENAME };
 const option::Descriptor opts[] =
 {
 	option::Descriptor(UNKNOWN, 0, "", "", option::Arg::None, "2SF Tags to NCSF v" + TWOSFTAGSTONCSF_VERSION + "\nBy Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]\n\n"
-		"2SF Tags to NCSF will copy tags from a 2SF set and place them into the tags of an NCSF set..\n\n"
+		"2SF Tags to NCSF will copy tags from a 2SF set and place them into the tags of an NCSF set.\n\n"
 		"Usage:\n"
 		"  2SFTagsToNCSF [options] <Input 2SF directory> <Output NCSF directory>\n\n"
 		"Options:"),
@@ -27,7 +27,9 @@ const option::Descriptor opts[] =
 	option::Descriptor(VERBOSE, 0, "v", "verbose", option::Arg::None, "  --verbose,-v \tVerbose output."),
 	option::Descriptor(EXCLUDETAG, 0, "x", "exclude", RequireArgument, "  --exclude=<tag> \v         -x <tag> \tExclude the given tag from the tags to copy."),
 	option::Descriptor(RENAME, 0, "r", "rename", option::Arg::None, "  --rename,-r \tRenames the NCSFs to match the 2SFs."),
-	option::Descriptor(UNKNOWN, 0, "", "", option::Arg::None, "\nVerbose output will output the tags that were copied."),
+	option::Descriptor(UNKNOWN, 0, "", "", option::Arg::None,
+		"\nVerbose output will output the tags that were copied."
+		"\n\nRegardless of which tags are excluded on the command line, the _lib, 2sfby, length and fade tags will always be excluded from the conversion process."),
 	option::Descriptor()
 };
 
@@ -95,9 +97,7 @@ int main(int argc, char *argv[])
 
 				SDAT sdat;
 				sdat.Read(filename, romFileData, false);
-				std::string filenameMinusPath = filename.substr(twoSFDirectory.size());
-				if (twoSFDirectory[twoSFDirectory.size() - 1] != '/')
-					filenameMinusPath.erase(0);
+				std::string filenameMinusPath = GetFilenameFromPath(filename);
 				twoSFSDATs.insert(std::make_pair(filenameMinusPath, sdat));
 			}
 		}
@@ -177,9 +177,7 @@ int main(int argc, char *argv[])
 			{
 				auto dot = twoSF->first.rfind('.');
 				filename = twoSF->first.substr(0, dot);
-				filename = filename.substr(twoSFDirectory.size());
-				if (twoSFDirectory[twoSFDirectory.size() - 1] != '/')
-					filename.erase(0);
+				filename = GetFilenameFromPath(filename);
 				if (NCSFDirectory[NCSFDirectory.size() - 1] != '/')
 					filename = "/" + filename;
 				filename = NCSFDirectory + filename;
