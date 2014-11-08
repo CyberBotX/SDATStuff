@@ -39,6 +39,8 @@ v1.5 - 2014-10-26 - Save the PLAYER blocks in the SDATs as opposed to
                     of the NCSFLIB accordingly.
                   - Fixed removal of output directory if there are no
                     SSEQs found.
+v1.6 - 2014-11-07 - Added functionality for an SMAP-like file to be used
+                    to include/exclude SSEQs.
 
 SDAT Strip Version History
 --------------------------
@@ -64,7 +66,7 @@ that uses the SDAT as it's "program".
 Contains:
 * 2SF Tags to NCSF v1.2 - A utility to copy tags from a 2SF set into an NCSF set.
 *      2SF to NCSF v1.0 - A utility to take a 2SF set and create an NCSF set out of it.
-*      NDS to NCSF v1.5 - A utility to take a Nintendo DS ROM and create an NCSF set out of it.
+*      NDS to NCSF v1.6 - A utility to take a Nintendo DS ROM and create an NCSF set out of it.
 *       SDAT Strip v1.2 - A utility to take an SDAT and strip it of all unneccesary items.
                           (NOTE: Superceded by NDS to NCSF.)
 *     SDAT to NCSF v1.2 - A utility to take an SDAT and create an NCSF out of it.

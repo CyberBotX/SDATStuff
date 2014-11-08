@@ -1,12 +1,13 @@
 /*
  * Common NCSF functions
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-10-23
+ * Last modification on 2014-11-07
  */
 
 #include <fstream>
 #include <memory>
 #include <iostream>
+#include <cmath>
 #include <zlib.h>
 #include "NCSF.h"
 #include "TimerPlayer.h"

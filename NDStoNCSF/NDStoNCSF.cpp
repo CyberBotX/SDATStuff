@@ -1,7 +1,7 @@
 /*
  * NDS to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-10-26
+ * Last modification on 2014-11-07
  *
  * Version history:
  *   v1.0 - 2013-03-25 - Initial version
@@ -24,13 +24,16 @@
  *                       of the NCSFLIB accordingly.
  *                     - Fixed removal of output directory if there are no
  *                       SSEQs found.
+ *   v1.6 - 2014-11-07 - Added functionality for an SMAP-like file to be used
+ *                       to include/exclude SSEQs.
  */
 
+#include <iomanip>
 #include "NCSF.h"
 
-static const std::string NDSTONCSF_VERSION = "1.5";
+static const std::string NDSTONCSF_VERSION = "1.6";
 
-enum { UNKNOWN, HELP, VERBOSE, TIME, FADELOOP, FADEONESHOT, EXCLUDE, INCLUDE, AUTO, NOCOPY };
+enum { UNKNOWN, HELP, VERBOSE, TIME, FADELOOP, FADEONESHOT, EXCLUDE, INCLUDE, AUTO, CREATE_SMAP, USE_SMAP, NOCOPY };
 const option::Descriptor opts[] =
 {
 	option::Descriptor(UNKNOWN, 0, "", "", option::Arg::None, "NDS to NCSF v" + NDSTONCSF_VERSION + "\nBy Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]\n\n"
@@ -50,6 +53,10 @@ const option::Descriptor opts[] =
 	option::Descriptor(INCLUDE, 0, "i", "include", RequireArgument,
 		"  --include=<filename> \v         -i <filename> \tInclude the given filename in the final SDAT. May use * and ? wildcards."),
 	option::Descriptor(AUTO, 0, "a", "auto", option::Arg::None, "  --auto,-a \tFully automatic mode (disables interactive mode)."),
+	option::Descriptor(CREATE_SMAP, 0, "s", "create-smap", RequireArgument,
+		"  --create-smap=<filename> \v             -s <filename> \tCreates an SMAP-like file that can later be used with the --use-smap/-S option."),
+	option::Descriptor(USE_SMAP, 0, "S", "use-smap", RequireArgument,
+		"  --use-smap=<filename> \v          -S <filename> \tUses the given SMAP-like file to determine what files to include/exclude."),
 	option::Descriptor(NOCOPY, 0, "n", "nocopy", option::Arg::None, "  --nocopy,-n \tDo not check for previous files in the destination directory."),
 	option::Descriptor(UNKNOWN, 0, "", "", option::Arg::None,
 		"\nVerbose output will output the NCSFs created. If given more than once, verbose output will also output duplicates found during the SDAT stripping step."
@@ -59,6 +66,10 @@ const option::Descriptor opts[] =
 			"before the forward slash are also accepted."
 		"\n\nIf --auto or -a are not given, the program will run in interactive mode, asking to confirm which sequences to keep. (NOTE: Even in interactive mode, files "
 			"which were excluded or included on the command line will still be automatically set as such.)"
+		"\n\nThe --create-smap or -s and --use-smap or -S options are meant to be used in tandum. Using --create-smap or -s will generate a specialized SMAP file. Lines in "
+			"this file starting with a '#' symbol are considered comments. Files can be excluded by commenting the line out. Once that has been done, the SMAP file can be "
+			"used with --use-smap or -S. The SMAP file is created relative to the output directory. NOTE: The short forms of the options are case-sensitive, so -s is not the "
+			"same as -S. Command line exclusions and inclusions, as well as automatic mode, are not allowed when these commands are used."
 		"\n\nIf --nocopy or -n are not given, the program will use information from a previous run of NDS to NCSF, if any exists. This will set files that were not in the "
 			"previous run's SDAT as being excluded by default and it will also attempt to copy tags from the previous files. (NOTE: This may not work if the original "
 			"SDAT did not contain a symbol record, mainly because filename matching cannot be done.)"
@@ -93,6 +104,20 @@ int main(int argc, char *argv[])
 			includesAndExcludes.push_back(KeepInfo(opt.arg, KEEP_EXCLUDE));
 		else if (opt.index() == INCLUDE)
 			includesAndExcludes.push_back(KeepInfo(opt.arg, KEEP_INCLUDE));
+	}
+
+	if (options[CREATE_SMAP] || options[USE_SMAP])
+	{
+		if (!includesAndExcludes.empty())
+		{
+			std::cerr << "Error: Command line exclusions and inclusions are not allowed when working with SMAP files.\n";
+			return 1;
+		}
+		if (options[AUTO])
+		{
+			std::cerr << "Error: Fully automatic mode is not allowed when working with SMAP files.\n";
+			return 1;
+		}
 	}
 
 	uint32_t numberOfLoops = 2;
@@ -182,7 +207,9 @@ int main(int argc, char *argv[])
 					}
 				}
 
-			RemoveFiles(files);
+			// Only remove the files if we are not creating an SMAP
+			if (!options[CREATE_SMAP])
+				RemoveFiles(files);
 		}
 		else
 			MakeDir(dirName);
@@ -236,6 +263,96 @@ int main(int argc, char *argv[])
 			throw std::range_error("Either there were no SSEQs within the SDATs of given NDS ROM, no SDATs in\n  the ROM, or the file was not an NDS ROM.");
 		}
 
+		if (options[CREATE_SMAP])
+		{
+			// Create an SMAP-like file
+			std::string smapFilename = dirName + "/" + options[CREATE_SMAP].arg;
+
+			std::ofstream smapFile(smapFilename.c_str());
+			smapFile << "# NOTE: This SMAP is not identical to SMAPs generated by other tools.\n";
+			smapFile << "#       It is meant for use with NDStoNCSF.\n\n";
+			smapFile << "# To exclude an SSEQ from the final NCSF set, you can put a '#' symbol\n";
+			smapFile << "# in front of the SSEQ's label.\n\n";
+			if (!finalSDAT.SYMBOffset)
+				smapFile << "# NOTE: This SDAT did not have a SYMB section. Labels were generated.\n\n";
+			smapFile << "# SEQ:\n";
+			size_t max_length = std::max_element(finalSDAT.infoSection.SEQrecord.entries.begin(), finalSDAT.infoSection.SEQrecord.entries.end(),
+				[](const INFOEntrySEQ &a, const INFOEntrySEQ &b) { return a.origFilename.size() < b.origFilename.size(); })->origFilename.size();
+			if (max_length < 26)
+				max_length = 26;
+			smapFile << "# " << std::left << std::setw(max_length) << "label" << "number ";
+			if (sdatNumber > 1)
+				smapFile << "SDAT# ";
+			smapFile << "fileID bnk vol cpr ppr ply       size name\n";
+			for (size_t i = 0; i < finalSDAT.infoSection.SEQrecord.count; ++i)
+			{
+				if (finalSDAT.infoSection.SEQrecord.entryOffsets[i])
+				{
+					const auto &entry = finalSDAT.infoSection.SEQrecord.entries[i];
+					smapFile << "  " << std::left << std::setw(max_length) << entry.origFilename;
+					smapFile << std::right << std::setw(6) << i;
+					if (sdatNumber > 1)
+						smapFile << std::setw(6) << entry.sdatNumber;
+					smapFile << std::setw(7) << entry.fileID;
+					smapFile << std::setw(4) << entry.bank;
+					smapFile << std::setw(4) << static_cast<int>(entry.vol);
+					smapFile << std::setw(4) << static_cast<int>(entry.cpr);
+					smapFile << std::setw(4) << static_cast<int>(entry.ppr);
+					smapFile << std::setw(4) << static_cast<int>(entry.ply);
+					smapFile << std::setw(11) << finalSDAT.fatSection.records[entry.fileID].size;
+					smapFile << " \\Seq\\" << entry.origFilename << ".sseq\n";
+				}
+				else
+					smapFile << std::right << std::setw(max_length + 8) << i << "\n";
+			}
+
+			std::cout << "Created SMAP: " << smapFilename << "\n";
+			return 0;
+		}
+
+		if (options[USE_SMAP])
+		{
+			// First, process the SMAP-like file
+			std::string smapFilename = dirName + "/" + options[USE_SMAP].arg;
+
+			std::ifstream smapFile(smapFilename.c_str());
+			do
+			{
+				std::string line;
+				std::getline(smapFile, line);
+
+				// Skip blank lines, commented lines (those starting with #) or lines that don't contain an SSEQ on them
+				if (line.empty() || line[0] == '#' || line[2] == ' ')
+					continue;
+
+				// We only need to extract the label and the SDAT# (if it exists)
+				std::istringstream stream(line);
+				std::string label;
+				size_t number;
+				stream >> label >> number;
+				std::string sdatNum = "";
+				if (sdatNumber > 1)
+				{
+					stream >> sdatNum;
+					sdatNum += "/";
+				}
+				includesAndExcludes.push_back(KeepInfo(sdatNum + label, KEEP_INCLUDE));
+			} while (!smapFile.eof());
+
+			// Second, mark all entries not included from the SMAP as being excluded
+			for (size_t i = 0; i < finalSDAT.infoSection.SEQrecord.count; ++i)
+			{
+				if (!finalSDAT.infoSection.SEQrecord.entryOffsets[i]) // Skip empty offsets
+					continue;
+
+				KeepType keep = IncludeFilename(finalSDAT.infoSection.SEQrecord.entries[i].sseq->origFilename,
+					finalSDAT.infoSection.SEQrecord.entries[i].sdatNumber, includesAndExcludes);
+
+				if (keep == KEEP_NEITHER)
+					includesAndExcludes.push_back(KeepInfo(finalSDAT.infoSection.SEQrecord.entries[i].FullFilename(sdatNumber > 1), KEEP_EXCLUDE));
+			}
+		}
+
 		// Pre-exclude/include removal
 		IncOrExc tempIncludesAndExcludes = includesAndExcludes;
 		Files oldSDATFilesList;
@@ -284,52 +401,54 @@ int main(int argc, char *argv[])
 			}
 		finalSDAT.Strip(tempIncludesAndExcludes, options[VERBOSE].count() > 1, false);
 
-		// Output which files are included/excluded, asking if -a was not given
-		for (size_t i = 0; i < finalSDAT.infoSection.SEQrecord.count; ++i)
-		{
-			if (!finalSDAT.infoSection.SEQrecord.entryOffsets[i]) // Skip empty offsets
-				continue;
-
-			std::string filename = finalSDAT.infoSection.SEQrecord.entries[i].sseq->origFilename,
-				fullFilename = finalSDAT.infoSection.SEQrecord.entries[i].FullFilename(sdatNumber > 1), verboseFilename = filename;
-			if (sdatNumber > 1)
-				verboseFilename += " (from SDAT #" + finalSDAT.infoSection.SEQrecord.entries[i].sdatNumber + ")";
-
-			KeepType keep = IncludeFilename(filename, finalSDAT.infoSection.SEQrecord.entries[i].sdatNumber, includesAndExcludes);
-
-			if (keep == KEEP_EXCLUDE)
-				std::cout << verboseFilename << " was excluded on the command line.\n";
-			else if (keep == KEEP_INCLUDE)
-				std::cout << verboseFilename << " was included on the command line.\n";
-			else
+		// Only do the following for includes/excludes if we are not using an SMAP (when we are, this has already been done)
+		if (!options[USE_SMAP])
+			// Output which files are included/excluded, asking if -a was not given
+			for (size_t i = 0; i < finalSDAT.infoSection.SEQrecord.count; ++i)
 			{
-				bool defaultToKeep = options[NOCOPY] || oldSDATFiles.empty() ||
-					std::find(oldSDATFilesList.begin(), oldSDATFilesList.end(), fullFilename) != oldSDATFilesList.end();
-				if (options[AUTO])
-				{
-					if (defaultToKeep)
-						std::cout << verboseFilename << " was included automatically.\n";
-					else
-					{
-						std::cout << verboseFilename << " was excluded automatically.\n";
-						includesAndExcludes.push_back(KeepInfo(fullFilename, KEEP_EXCLUDE));
-					}
-				}
+				if (!finalSDAT.infoSection.SEQrecord.entryOffsets[i]) // Skip empty offsets
+					continue;
+
+				std::string filename = finalSDAT.infoSection.SEQrecord.entries[i].sseq->origFilename,
+					fullFilename = finalSDAT.infoSection.SEQrecord.entries[i].FullFilename(sdatNumber > 1), verboseFilename = filename;
+				if (sdatNumber > 1)
+					verboseFilename += " (from SDAT #" + finalSDAT.infoSection.SEQrecord.entries[i].sdatNumber + ")";
+
+				KeepType keep = IncludeFilename(filename, finalSDAT.infoSection.SEQrecord.entries[i].sdatNumber, includesAndExcludes);
+
+				if (keep == KEEP_EXCLUDE)
+					std::cout << verboseFilename << " was excluded on the command line.\n";
+				else if (keep == KEEP_INCLUDE)
+					std::cout << verboseFilename << " was included on the command line.\n";
 				else
 				{
-					std::cout << "Would you like to keep " << verboseFilename << "? [" << (defaultToKeep ? "Y" : "y") << "/" << (defaultToKeep ? "n" : "N") << "] ";
-					std::string input;
-					do
+					bool defaultToKeep = options[NOCOPY] || oldSDATFiles.empty() ||
+						std::find(oldSDATFilesList.begin(), oldSDATFilesList.end(), fullFilename) != oldSDATFilesList.end();
+					if (options[AUTO])
 					{
-						getline(std::cin, input);
-						if (!input.empty())
-							input[0] = std::tolower(input[0]);
-					} while (!input.empty() && input[0] != 'y' && input[0] != 'n');
-					if ((input.empty() && !defaultToKeep) || (!input.empty() && input[0] == 'n'))
-						includesAndExcludes.push_back(KeepInfo(fullFilename, KEEP_EXCLUDE));
+						if (defaultToKeep)
+							std::cout << verboseFilename << " was included automatically.\n";
+						else
+						{
+							std::cout << verboseFilename << " was excluded automatically.\n";
+							includesAndExcludes.push_back(KeepInfo(fullFilename, KEEP_EXCLUDE));
+						}
+					}
+					else
+					{
+						std::cout << "Would you like to keep " << verboseFilename << "? [" << (defaultToKeep ? "Y" : "y") << "/" << (defaultToKeep ? "n" : "N") << "] ";
+						std::string input;
+						do
+						{
+							getline(std::cin, input);
+							if (!input.empty())
+								input[0] = std::tolower(input[0]);
+						} while (!input.empty() && input[0] != 'y' && input[0] != 'n');
+						if ((input.empty() && !defaultToKeep) || (!input.empty() && input[0] == 'n'))
+							includesAndExcludes.push_back(KeepInfo(fullFilename, KEEP_EXCLUDE));
+					}
 				}
 			}
-		}
 
 		// Post-exclude/input removal
 		finalSDAT.Strip(includesAndExcludes, options[VERBOSE].count() > 1);
@@ -362,7 +481,7 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
-			// Determine filename to use for the NCSFLIB (will either be NTR-<gamecode>-<countrycode> or the name from the ROM's filename)
+			// Determine filename to use for the NCSFLIB (will either be NTR/TWL-<gamecode>-<countrycode> or the name from the ROM's filename)
 			std::map<char, std::string> countryCodes;
 			countryCodes['J'] = "JPN";
 			countryCodes['E'] = "USA";
