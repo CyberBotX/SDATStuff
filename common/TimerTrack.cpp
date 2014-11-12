@@ -812,6 +812,58 @@ void TimerTrack::Run()
 	}
 }
 
+std::pair<std::vector<uint16_t>, std::vector<uint32_t>> TimerTrack::GetPatches(const SSEQ *sseq)
+{
+	std::vector<uint16_t> patches;
+	std::vector<uint32_t> positions;
+
+	PseudoReadFile file(sseq->info.origFilename);
+	file.GetDataFromVector(sseq->data.begin(), sseq->data.end());
+
+	uint32_t dataSize = sseq->data.size();
+
+	uint8_t tracks = 1;
+	uint8_t finishedTracks = 0;
+	while (file.pos < dataSize)
+	{
+		int cmd = file.ReadLE<uint8_t>();
+		switch (cmd)
+		{
+			case SSEQ_CMD_OPENTRACK:
+				file.pos += 4;
+				++tracks;
+				break;
+			case SSEQ_CMD_PATCH:
+				positions.push_back(file.pos);
+				patches.push_back(file.ReadVL());
+				break;
+			case SSEQ_CMD_END:
+				++finishedTracks;
+				break;
+			default:
+			{
+				uint8_t cmdBytes = SseqCommandByteCount(cmd);
+				bool variableBytes = !!(cmdBytes & VariableByteCount);
+				bool extraByte = !!(cmdBytes & ExtraByteOnNoteOrVarOrCmp);
+				cmdBytes &= ~(VariableByteCount | ExtraByteOnNoteOrVarOrCmp);
+				if (extraByte)
+				{
+					int extraCmd = file.ReadLE<uint8_t>();
+					if ((extraCmd >= SSEQ_CMD_SETVAR && extraCmd <= SSEQ_CMD_CMP_NE) || extraCmd < 0x80)
+						++cmdBytes;
+				}
+				file.pos += cmdBytes;
+				if (variableBytes)
+					file.ReadVL();
+			}
+		}
+		if (finishedTracks == tracks)
+			break;
+	}
+
+	return std::make_pair(patches, positions);
+}
+
 int TimerTrack::Read8()
 {
 	return this->file.ReadLE<uint8_t>();

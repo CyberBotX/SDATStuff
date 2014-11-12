@@ -14,6 +14,7 @@
 
 #include <functional>
 #include <bitset>
+#include "SSEQ.h"
 #include "common.h"
 
 const int TRACKSTACKSIZE = 3;
@@ -99,6 +100,7 @@ struct TimerTrack
 	int NoteOnTie(int key, int vel);
 	void ReleaseAllNotes();
 	void Run();
+	static std::pair<std::vector<uint16_t>, std::vector<uint32_t>> GetPatches(const SSEQ *sseq);
 
 	int Read8();
 	int Read16();

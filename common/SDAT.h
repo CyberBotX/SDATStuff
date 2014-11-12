@@ -55,4 +55,6 @@ struct SDAT
 
 	SDAT &operator+=(const SDAT &other);
 	void Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removeExcluded = true);
+	void StripBanks();
+	void FixOffsetsAndSizes();
 };

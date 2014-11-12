@@ -452,6 +452,7 @@ int main(int argc, char *argv[])
 
 		// Post-exclude/input removal
 		finalSDAT.Strip(includesAndExcludes, options[VERBOSE].count() > 1);
+		finalSDAT.StripBanks();
 
 		// Create vector data for SDAT
 		PseudoWrite sdatData;

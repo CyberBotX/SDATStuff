@@ -10,6 +10,7 @@
 #include <functional>
 #include <iostream>
 #include "SDAT.h"
+#include "TimerTrack.h"
 
 bool SDAT::failOnMissingFiles = true;
 
@@ -18,6 +19,8 @@ SDAT::SDAT() : filename(""), header(), SYMBOffset(0), SYMBSize(0), INFOOffset(0)
 {
 	memcpy(this->header.type, "SDAT", sizeof(this->header.type));
 	this->header.magic = 0x0100FEFF;
+	this->header.size = 0x40;
+	this->header.blocks = 3;
 }
 
 SDAT::SDAT(const SDAT &sdat) : filename(sdat.filename), header(sdat.header), SYMBOffset(sdat.SYMBOffset), SYMBSize(sdat.SYMBSize), INFOOffset(sdat.INFOOffset),
@@ -979,7 +982,124 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 		this->symbSectionNeedsCleanup = false;
 	}
 
-	// Calculate new offsets and sizes
+	// Fix the offsets and sizes
+	this->FixOffsetsAndSizes();
+}
+
+template<typename T> static inline void MergeUniqueVector(const std::vector<T> &src, std::vector<T> &dest)
+{
+	dest.insert(dest.end(), src.begin(), src.end());
+	std::sort(dest.begin(), dest.end());
+	auto last = std::unique(dest.begin(), dest.end());
+	dest.erase(last, dest.end());
+}
+
+// Comes from http://techoverflow.net/blog/2013/01/25/efficiently-encoding-variable-length-integers-in-cc/
+// But modified to use a vector instead
+template<typename T> static inline std::vector<uint8_t> EncodeVarLen(T value)
+{
+	std::vector<uint8_t> output;
+	// While more than 7 bits of data are left, occupy the last output byte and set the next byte flag
+	while (value > 127)
+	{
+		output.push_back((value & 0x7F) | 0x80);
+		// Remove the seven bits we just wrote
+		value >>= 7;
+	}
+	output.push_back(value & 0x7F);
+	return output;
+}
+
+void SDAT::StripBanks()
+{
+	// Get all the unique patches
+	std::map<uint16_t, std::vector<uint16_t>> BankPatches;
+	std::map<uint32_t, std::vector<uint32_t>> PatchPositions;
+	for (uint32_t i = 0; i < this->infoSection.SEQrecord.count; ++i)
+	{
+		if (!this->infoSection.SEQrecord.entryOffsets[i])
+			continue;
+
+		auto data = TimerTrack::GetPatches(this->infoSection.SEQrecord.entries[i].sseq);
+		MergeUniqueVector(data.first, BankPatches[this->infoSection.SEQrecord.entries[i].bank]);
+		PatchPositions[i] = data.second;
+	}
+
+	// Figure out where the new patch positions are going to be
+	// Also edit the SBNKs so the empty spaces and unused patches are removed
+	std::map<uint16_t, std::map<uint16_t, uint16_t>> PatchMove;
+	std::for_each(BankPatches.begin(), BankPatches.end(), [&](const std::pair<uint16_t, std::vector<uint16_t>> &BankPatch)
+	{
+		auto &entry = this->infoSection.BANKrecord.entries[BankPatch.first];
+		std::vector<SBNKInstrument> newPatches;
+		auto sbnk = std::find_if(this->SBNKs.begin(), this->SBNKs.end(), [&](const std::unique_ptr<SBNK> &thisSBNK)
+		{
+			return thisSBNK.get() == entry.sbnk;
+		})->get();
+		sbnk->count = BankPatch.second.size();
+		for (uint16_t i = 0; i < sbnk->count; ++i)
+		{
+			PatchMove[BankPatch.first][BankPatch.second[i]] = i;
+			newPatches.push_back(sbnk->instruments[BankPatch.second[i]]);
+		}
+		sbnk->instruments = newPatches;
+		sbnk->FixOffsets();
+
+		// Also replace the file data for the SBNK
+		PseudoWrite newFileData;
+		sbnk->header.fileSize = sbnk->Size();
+		sbnk->Write(newFileData);
+		entry.fileData = newFileData.vector->data;
+		sbnk->info = entry;
+	});
+
+	// Edit the SSEQs so they point at the new patch positions
+	for (uint32_t i = 0; i < this->infoSection.SEQrecord.count; ++i)
+	{
+		if (!this->infoSection.SEQrecord.entryOffsets[i])
+			continue;
+
+		auto &entry = this->infoSection.SEQrecord.entries[i];
+		auto sseq = std::find_if(this->SSEQs.begin(), this->SSEQs.end(), [&](const std::unique_ptr<SSEQ> &thisSSEQ)
+		{
+			return thisSSEQ.get() == entry.sseq;
+		})->get();
+		auto &BankPatchMove = PatchMove[entry.bank];
+
+		PseudoReadFile file;
+		file.GetDataFromVector(sseq->data.begin(), sseq->data.end());
+
+		std::vector<uint8_t> newFileData = sseq->data;
+
+		int offset = 0;
+		const auto &positions = PatchPositions[i];
+		for (size_t j = 0, num = positions.size(); j < num; ++j)
+		{
+			file.pos = positions[j] + offset;
+			int oldPatch = file.ReadVL();
+			int newPatch = BankPatchMove[oldPatch];
+			if (oldPatch != newPatch)
+			{
+				auto oldPatchVector = EncodeVarLen(oldPatch);
+				auto newPatchVector = EncodeVarLen(newPatch);
+				newFileData.erase(newFileData.begin() + positions[j], newFileData.begin() + positions[j] + oldPatchVector.size());
+				newFileData.insert(newFileData.begin() + positions[j], newPatchVector.begin(), newPatchVector.end());
+				offset += newPatchVector.size() - static_cast<int>(oldPatchVector.size());
+			}
+		}
+
+		sseq->data = newFileData;
+		entry.fileData.erase(entry.fileData.begin() + 0x1C, entry.fileData.end());
+		entry.fileData.insert(entry.fileData.end(), newFileData.begin(), newFileData.end());
+		sseq->info = entry;
+	}
+
+	// Fix the offsets and sizes
+	this->FixOffsetsAndSizes();
+}
+
+void SDAT::FixOffsetsAndSizes()
+{
 	this->INFOOffset = 0x40;
 	if (this->SYMBOffset)
 	{
@@ -994,8 +1114,8 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 	this->FILEOffset = this->FATOffset + this->FATSize;
 	uint32_t offset = this->FILEOffset + 24;
 	this->FILESize = 0x18;
-	fileID = 0;
-	for (uint32_t i = 0, num = SSEQsToKeep.size(); i < num; ++i)
+	uint16_t fileID = 0;
+	for (uint32_t i = 0, num = this->SSEQs.size(); i < num; ++i)
 	{
 		this->fatSection.records[fileID].offset = offset;
 		uint32_t fileSize = this->infoSection.SEQrecord.entries[i].fileData.size();
@@ -1003,7 +1123,7 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 		offset += fileSize;
 		this->FILESize += fileSize;
 	}
-	for (uint32_t i = 0, num = SBNKsToKeep.size(); i < num; ++i)
+	for (uint32_t i = 0, num = this->SBNKs.size(); i < num; ++i)
 	{
 		this->fatSection.records[fileID].offset = offset;
 		uint32_t fileSize = this->infoSection.BANKrecord.entries[i].fileData.size();
@@ -1011,7 +1131,7 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 		offset += fileSize;
 		this->FILESize += fileSize;
 	}
-	for (uint32_t i = 0, num = SWARsToKeep.size(); i < num; ++i)
+	for (uint32_t i = 0, num = this->SWARs.size(); i < num; ++i)
 	{
 		this->fatSection.records[fileID].offset = offset;
 		uint32_t fileSize = this->infoSection.WAVEARCrecord.entries[i].fileData.size();
@@ -1021,4 +1141,5 @@ void SDAT::Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removed
 	}
 
 	this->header.fileSize = this->FILEOffset + this->FILESize;
+	this->header.blocks = this->SYMBOffset ? 4 : 3;
 }

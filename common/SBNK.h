@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "SWAR.h"
+#include "NDSStdHeader.h"
 #include "INFOEntry.h"
 #include "common.h"
 
@@ -30,21 +30,30 @@ struct SBNKInstrumentRange
 	SBNKInstrumentRange(uint8_t lowerNote, uint8_t upperNote, int recordType);
 
 	void Read(PseudoReadFile &file);
+	void Write(PseudoWrite &file) const;
 };
 
 struct SBNKInstrument
 {
 	uint8_t record;
+	uint16_t offset;
+	uint8_t unknown;
 	std::vector<SBNKInstrumentRange> ranges;
 
 	SBNKInstrument();
 
 	void Read(PseudoReadFile &file, uint32_t startOffset);
+	uint32_t Size() const;
+	uint16_t FixOffset(uint16_t newOffset);
+	void WriteHeader(PseudoWrite &file) const;
+	void WriteData(PseudoWrite &file) const;
 };
 
 struct SBNK
 {
 	std::string filename;
+	NDSStdHeader header;
+	uint32_t count;
 	std::vector<SBNKInstrument> instruments;
 
 	int32_t entryNumber;
@@ -53,4 +62,8 @@ struct SBNK
 	SBNK(const std::string &fn = "");
 
 	void Read(PseudoReadFile &file);
+	uint32_t Size() const;
+	uint32_t DataSize() const;
+	void FixOffsets();
+	void Write(PseudoWrite &file) const;
 };
