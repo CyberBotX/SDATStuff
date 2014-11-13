@@ -1,7 +1,7 @@
 /*
  * 2SF Tags to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-10-29
+ * Last modification on 2014-11-12
  *
  * Version history:
  *   v1.0 - 2013-03-30 - Initial version
@@ -70,6 +70,8 @@ int main(int argc, char *argv[])
 
 	std::map<std::string, SDAT> twoSFSDATs;
 	TwoSFs twoSFs;
+	uint8_t sdatSignature[] = { 0x53, 0x44, 0x41, 0x54, 0xFF, 0xFE, 0x00, 0x01 };
+	std::vector<uint8_t> sdatSignatureVector(sdatSignature, sdatSignature + 8);
 	// Get the tags and sdats from the 2SFs
 	std::for_each(twoSFFiles.begin(), twoSFFiles.end(), [&](const std::string &filename)
 	{
@@ -90,8 +92,6 @@ int main(int argc, char *argv[])
 				PseudoReadFile romFileData(filename);
 				romFileData.GetDataFromVector(programSection.begin() + 8, programSection.end());
 
-				uint8_t sdatSignature[] = { 0x53, 0x44, 0x41, 0x54, 0xFF, 0xFE, 0x00, 0x01 };
-				std::vector<uint8_t> sdatSignatureVector(sdatSignature, sdatSignature + 8);
 				romFileData.pos = 0;
 				romFileData.startOffset = romFileData.GetNextOffset(0, sdatSignatureVector);
 
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 			// If the program section is empty, this is a minincsf
 			if (programSection.empty())
 			{
-				uint32_t SSEQNumber = ReadLE<uint32_t>(&(*fileData.data.get())[16]);
+				uint32_t SSEQNumber = ReadLE<uint32_t>(&fileData.data[16]);
 				ncsfs.insert(std::make_pair(filename, std::make_pair(SSEQNumber, tags)));
 			}
 			// Otherwise it is either an ncsf or an ncsflib

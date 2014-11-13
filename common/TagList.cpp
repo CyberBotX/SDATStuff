@@ -1,7 +1,7 @@
 /*
  * xSF Tag List
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2013-03-30
+ * Last modification on 2014-11-12
  *
  * Storage of tags from PSF-style files, specifications found at
  * http://wiki.neillcorlett.com/PSFTagFormat
@@ -20,8 +20,10 @@ auto TagList::GetKeys() const -> const TagsList &
 auto TagList::GetTags() const -> TagsList
 {
 	TagsList allTags;
-	for (auto curr = this->tagsOrder.begin(), end = this->tagsOrder.end(); curr != end; ++curr)
-		allTags.push_back(*curr + "=" + this->tags.find(*curr)->second);
+	std::for_each(this->tagsOrder.begin(), this->tagsOrder.end(), [&](const std::string &tag)
+	{
+		allTags.push_back(tag + "=" + this->tags.find(tag)->second);
+	});
 	return allTags;
 }
 

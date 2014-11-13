@@ -1,7 +1,7 @@
 /*
  * SSEQ Player - SDAT SBNK (Sound Bank) structures
  * By Naram Qashat (CyberBotX)
- * Last modification on 2013-03-30
+ * Last modification on 2014-11-12
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html

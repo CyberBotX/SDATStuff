@@ -1,7 +1,7 @@
 /*
  * Common NCSF functions
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-11-07
+ * Last modification on 2014-11-12
  */
 
 #include <fstream>
@@ -69,7 +69,7 @@ void MakeNCSF(const std::string &filename, const std::vector<uint8_t> &reservedS
 void CheckForValidPSF(PseudoReadFile &file, uint8_t versionByte)
 {
 	// Various checks on the file's size will be done throughout
-	if (file.data->size() < 4)
+	if (file.data.size() < 4)
 		throw std::range_error("File is too small.");
 
 	file.pos = 0;
@@ -86,7 +86,7 @@ void CheckForValidPSF(PseudoReadFile &file, uint8_t versionByte)
 		throw std::runtime_error("Version byte of " + NumToHexString<uint8_t>(PSFHeader[3]) +
 			" does not equal what we were looking for (" + NumToHexString(versionByte) + ").");
 
-	if (file.data->size() < 16)
+	if (file.data.size() < 16)
 		throw std::range_error("File is too small.");
 
 	// Get the sizes on the reserved and program sections
@@ -96,13 +96,13 @@ void CheckForValidPSF(PseudoReadFile &file, uint8_t versionByte)
 	file.pos += 4;
 
 	// Check the reserved section
-	if (reservedSize && file.data->size() < reservedSize + 16)
+	if (reservedSize && file.data.size() < reservedSize + 16)
 		throw std::range_error("File is too small.");
 
 	file.pos += reservedSize;
 
 	// Check the program section
-	if (programCompressedSize && file.data->size() < reservedSize + programCompressedSize + 16)
+	if (programCompressedSize && file.data.size() < reservedSize + programCompressedSize + 16)
 		throw std::range_error("File is too small.");
 }
 
@@ -194,7 +194,7 @@ TagList GetTagsFromPSF(PseudoReadFile &file, uint8_t versionByte)
 		file.pos = TagOffset + 5;
 		std::string name, value;
 		bool onName = true;
-		size_t lengthOfTags = file.data->size() - file.pos;
+		size_t lengthOfTags = file.data.size() - file.pos;
 		for (size_t x = 0; x < lengthOfTags; ++x)
 		{
 			char curr = file.ReadLE<uint8_t>();

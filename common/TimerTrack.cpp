@@ -1,7 +1,7 @@
 /*
  * SDAT - Timer Track structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-10-23
+ * Last modification on 2014-11-12
  *
  * Adapted from source code of FeOS Sound System
  * By fincs
@@ -87,7 +87,7 @@ void TimerTrack::Init(uint8_t handle, TimerPlayer *player, const PseudoReadFile 
 {
 	this->trackId = handle;
 	this->ply = player;
-	this->file.GetDataFromVector(source.data->begin(), source.data->end());
+	this->file.GetDataFromVector(source.data.begin(), source.data.end());
 	this->file.pos = this->startPos = source.pos;
 	this->ClearState();
 }

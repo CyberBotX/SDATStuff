@@ -1,7 +1,7 @@
 /*
  * SDAT to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-10-15
+ * Last modification on 2014-11-12
  *
  * NOTE: This version has been superceded by NDS to NCSF instead.  It also lacks
  *       some of the features that are in NDS to NCSF.
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 			if (numberOfLoops)
 				GetTime(ncsfFilename, &sdat, sdat.infoSection.SEQrecord.entries[0].sseq, tags, !!options[VERBOSE], numberOfLoops, fadeLoop, fadeOneShot);
 
-			MakeNCSF(dirName + "/" + ncsfFilename, reservedData, *fileData.data.get(), tags.GetTags());
+			MakeNCSF(dirName + "/" + ncsfFilename, reservedData, fileData.data, tags.GetTags());
 			if (options[VERBOSE])
 				std::cout << "Created " << ncsfFilename << "\n";
 		}
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 			std::string ncsflibFilename = GetFilenameFromPath(sdatFilename);
 			size_t libdot = ncsflibFilename.rfind('.');
 			ncsflibFilename = ncsflibFilename.substr(0, libdot) + ".ncsflib";
-			MakeNCSF(dirName + "/" + ncsflibFilename, std::vector<uint8_t>(), *fileData.data.get());
+			MakeNCSF(dirName + "/" + ncsflibFilename, std::vector<uint8_t>(), fileData.data);
 			if (options[VERBOSE])
 				std::cout << "Created " << ncsflibFilename << "\n";
 

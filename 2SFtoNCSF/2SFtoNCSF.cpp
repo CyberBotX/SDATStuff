@@ -1,7 +1,7 @@
 /*
  * 2SF to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-10-28
+ * Last modification on 2014-11-12
  *
  * Version history:
  *   v1.0 - 2013-03-30 - Initial version
@@ -84,6 +84,8 @@ int main(int argc, char *argv[])
 
 	std::map<std::string, SDAT> twoSFSDATs;
 	TwoSFs twoSFs;
+	uint8_t sdatSignature[] = { 0x53, 0x44, 0x41, 0x54, 0xFF, 0xFE, 0x00, 0x01 };
+	std::vector<uint8_t> sdatSignatureVector(sdatSignature, sdatSignature + 8);
 	// Get the tags and sdats from the 2SFs
 	std::for_each(twoSFFiles.begin(), twoSFFiles.end(), [&](const std::string &filename)
 	{
@@ -114,8 +116,6 @@ int main(int argc, char *argv[])
 				if (gameName != "LEGACY OF YS")
 					throw std::runtime_error("This tool only works on the Legacy of Ys ROM, but I got '" + gameName + "' instead.");
 
-				uint8_t sdatSignature[] = { 0x53, 0x44, 0x41, 0x54, 0xFF, 0xFE, 0x00, 0x01 };
-				std::vector<uint8_t> sdatSignatureVector(sdatSignature, sdatSignature + 8);
 				romFileData.pos = 0;
 				romFileData.startOffset = romFileData.GetNextOffset(0, sdatSignatureVector);
 
