@@ -485,15 +485,21 @@ int main(int argc, char *argv[])
 			// Determine filename to use for the NCSFLIB (will either be NTR/TWL-<gamecode>-<countrycode> or the name from the ROM's filename)
 			std::map<char, std::string> countryCodes;
 			countryCodes['J'] = "JPN";
-			countryCodes['E'] = "USA";
-			countryCodes['P'] = "EUR";
-			countryCodes['D'] = "GER";
+			countryCodes['E'] = countryCodes['O'] = countryCodes['T'] = "USA"; // Apparently AUS can sometimes use the E country code | The O and T appear to be seen on DSi carts
+			countryCodes['P'] = "EUR"; // Also seen as UKV sometimes
+			countryCodes['D'] = "GER"; // Seen as NOE more often, though
 			countryCodes['F'] = "FRA";
 			countryCodes['I'] = "ITA";
-			countryCodes['S'] = "SPA";
+			countryCodes['S'] = "SPA"; // Also seen as ESP sometimes
 			countryCodes['H'] = "HOL";
 			countryCodes['K'] = "KOR";
-			countryCodes['X'] = "EUU";
+			countryCodes['C'] = "CHN";
+			countryCodes['U'] = "AUS";
+			countryCodes['N'] = "NOR";
+			countryCodes['Q'] = "DEN";
+			countryCodes['R'] = "RUS";
+			countryCodes['M'] = "SWE";
+			countryCodes['V'] = countryCodes['W'] = countryCodes['X'] = countryCodes['Y'] = countryCodes['Z'] = "EUU";
 
 			std::string gameSerial = GetFilenameFromPath(ndsFilename);
 			size_t gamedot = gameSerial.rfind('.');
