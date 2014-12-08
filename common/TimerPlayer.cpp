@@ -1,7 +1,7 @@
 /*
  * SDAT - Timer Player structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-10-23
+ * Last modification on 2014-12-08
  *
  * Adapted from source code of FeOS Sound System
  * By fincs
@@ -34,11 +34,11 @@ TimerPlayer::TimerPlayer() : prio(0), nTracks(0), tempo(120), tempoCount(0), tem
 }
 
 // Original FSS Function: Player_Setup
-void TimerPlayer::Setup(const SSEQ *sseqToPlay)
+void TimerPlayer::Setup(const SSEQ *sseqToPlay, const std::string &filename)
 {
 	this->sseq = sseqToPlay;
 
-	PseudoReadFile file(this->sseq->info.origFilename);
+	PseudoReadFile file(filename);
 	file.GetDataFromVector(this->sseq->data.begin(), this->sseq->data.end());
 
 	this->tracks[0].Init(0, this, file);

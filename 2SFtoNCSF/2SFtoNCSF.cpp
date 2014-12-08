@@ -1,16 +1,17 @@
 /*
  * 2SF to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-11-12
+ * Last modification on 2014-12-08
  *
  * Version history:
- *   v1.0 - 2013-03-30 - Initial version
+ *   v1.0 - 2014-10-29 - Initial version
+ *   v1.1 - 2012-12-08 - Minor cleanup of PseudoReadFile to not use a pointer.
  */
 
 #include <tuple>
 #include "NCSF.h"
 
-static const std::string TWOSFTONCSF_VERSION = "1.0";
+static const std::string TWOSFTONCSF_VERSION = "1.1";
 
 enum { UNKNOWN, HELP, VERBOSE, TIME, FADELOOP, FADEONESHOT, EXCLUDETAG };
 const option::Descriptor opts[] =

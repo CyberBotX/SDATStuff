@@ -1,7 +1,7 @@
 /*
  * NDS to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-11-12
+ * Last modification on 2014-12-08
  *
  * Version history:
  *   v1.0 - 2013-03-25 - Initial version
@@ -26,12 +26,15 @@
  *                       SSEQs found.
  *   v1.6 - 2014-11-07 - Added functionality for an SMAP-like file to be used
  *                       to include/exclude SSEQs.
+ *   v1.7 - 2014-12-08 - Added functionality to strip the SBNKs and SWARs of
+ *                       the SDAT prior to saving it.
+ *                     - Minor cleanup of PseudoReadFile to not use a pointer.
  */
 
 #include <iomanip>
 #include "NCSF.h"
 
-static const std::string NDSTONCSF_VERSION = "1.6";
+static const std::string NDSTONCSF_VERSION = "1.7";
 
 enum { UNKNOWN, HELP, VERBOSE, TIME, FADELOOP, FADEONESHOT, EXCLUDE, INCLUDE, AUTO, CREATE_SMAP, USE_SMAP, NOCOPY };
 const option::Descriptor opts[] =
@@ -76,6 +79,8 @@ const option::Descriptor opts[] =
 		"\n\nTiming uses code based on FeOS Sound System by fincs, as well as code from DeSmuME for pseudo-playback."),
 	option::Descriptor()
 };
+
+typedef std::multimap<std::string, SSEQ> OldSDATFilesMap;
 
 int main(int argc, char *argv[])
 {
@@ -151,7 +156,7 @@ int main(int argc, char *argv[])
 
 		std::map<std::string, TagList> savedTags;
 		std::map<std::string, std::string> filenames;
-		std::multimap<std::string, SSEQ> oldSDATFiles;
+		OldSDATFilesMap oldSDATFiles;
 		if (DirExists(dirName))
 		{
 			std::string extensions[] = { ".ncsf", ".minincsf", ".ncsflib" };
@@ -375,7 +380,7 @@ int main(int argc, char *argv[])
 					bool exclude = true;
 					const auto &thisData = finalSDAT.infoSection.SEQrecord.entries[i].sseq->data;
 					// Data comparison lambda
-					auto dataCompare = [&](const std::pair<std::string, SSEQ> &curr)
+					auto dataCompare = [&](const OldSDATFilesMap::value_type &curr)
 					{
 						if (exclude)
 						{
@@ -452,7 +457,8 @@ int main(int argc, char *argv[])
 
 		// Post-exclude/input removal
 		finalSDAT.Strip(includesAndExcludes, options[VERBOSE].count() > 1);
-		finalSDAT.StripBanks();
+		finalSDAT.StripBanksAndWaveArcs();
+		finalSDAT.Strip(IncOrExc(), options[VERBOSE].count() > 1);
 
 		// Create vector data for SDAT
 		PseudoWrite sdatData;

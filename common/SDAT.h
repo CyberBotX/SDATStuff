@@ -1,7 +1,7 @@
 /*
  * SDAT - SDAT structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-11-12
+ * Last modification on 2014-12-08
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
@@ -20,6 +20,10 @@
 
 struct SDAT
 {
+	typedef std::vector<std::unique_ptr<SSEQ>> SSEQList;
+	typedef std::vector<std::unique_ptr<SBNK>> SBNKList;
+	typedef std::vector<std::unique_ptr<SWAR>> SWARList;
+
 	static bool failOnMissingFiles;
 
 	std::string filename;
@@ -40,9 +44,9 @@ struct SDAT
 	bool symbSectionNeedsCleanup;
 	uint16_t count;
 
-	std::vector<std::unique_ptr<SSEQ>> SSEQs;
-	std::vector<std::unique_ptr<SBNK>> SBNKs;
-	std::vector<std::unique_ptr<SWAR>> SWARs;
+	SSEQList SSEQs;
+	SBNKList SBNKs;
+	SWARList SWARs;
 
 	SDAT();
 	SDAT(const SDAT &sdat);
@@ -55,6 +59,10 @@ struct SDAT
 
 	SDAT &operator+=(const SDAT &other);
 	void Strip(const IncOrExc &includesAndExcludes, bool verbose, bool removeExcluded = true);
-	void StripBanks();
+	void StripBanksAndWaveArcs();
 	void FixOffsetsAndSizes();
+
+	SSEQList::iterator GetNonConstSSEQ(const SSEQ *sseq);
+	SBNKList::iterator GetNonConstSBNK(const SBNK *sbnk);
+	SWARList::iterator GetNonConstSWAR(const SWAR *swar);
 };

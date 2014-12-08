@@ -1,19 +1,20 @@
 /*
  * 2SF Tags to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-11-12
+ * Last modification on 2014-12-08
  *
  * Version history:
  *   v1.0 - 2013-03-30 - Initial version
  *   v1.1 - 2012-03-30 - Added option to rename the NCSFs, requested by Knurek.
  *   v1.2 - 2012-04-10 - Made it so a file is not overwritten when renaming if
  *                       a duplicate is found.
+ *   v1.3 - 2012-12-08 - Minor cleanup of PseudoReadFile to not use a pointer.
  */
 
 #include <tuple>
 #include "NCSF.h"
 
-static const std::string TWOSFTAGSTONCSF_VERSION = "1.2";
+static const std::string TWOSFTAGSTONCSF_VERSION = "1.3";
 
 enum { UNKNOWN, HELP, VERBOSE, EXCLUDETAG, RENAME };
 const option::Descriptor opts[] =

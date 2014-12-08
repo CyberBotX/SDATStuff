@@ -1,7 +1,7 @@
 /*
  * SDAT - SWAV (Waveform/Sample) structure
  * By Naram Qashat (CyberBotX)
- * Last modification on 2014-10-15
+ * Last modification on 2014-12-08
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
@@ -62,19 +62,19 @@ static inline void DecodeADPCMNibble(int32_t nibble, int32_t &stepIndex, int32_t
 		predictedValue = 0x7FFF;
 }
 
-void SWAV::DecodeADPCM(const uint8_t *origData, uint32_t len)
+void SWAV::DecodeADPCM(uint32_t len)
 {
-	int32_t predictedValue = origData[0] | (origData[1] << 8);
-	int32_t stepIndex = origData[2] | (origData[3] << 8);
+	int32_t predictedValue = this->origData[0] | (this->origData[1] << 8);
+	int32_t stepIndex = this->origData[2] | (this->origData[3] << 8);
 	auto finalData = &this->data[0];
 
 	for (uint32_t i = 0; i < len; ++i)
 	{
-		int32_t nibble = origData[i + 4] & 0x0F;
+		int32_t nibble = this->origData[i + 4] & 0x0F;
 		DecodeADPCMNibble(nibble, stepIndex, predictedValue);
 		finalData[2 * i] = predictedValue;
 
-		nibble = (origData[i + 4] >> 4) & 0x0F;
+		nibble = (this->origData[i + 4] >> 4) & 0x0F;
 		DecodeADPCMNibble(nibble, stepIndex, predictedValue);
 		finalData[2 * i + 1] = predictedValue;
 	}
@@ -86,38 +86,55 @@ void SWAV::Read(PseudoReadFile &file)
 	this->loop = file.ReadLE<uint8_t>();
 	this->sampleRate = file.ReadLE<uint16_t>();
 	this->time = file.ReadLE<uint16_t>();
-	this->loopOffset = file.ReadLE<uint16_t>();
-	this->nonLoopLength = file.ReadLE<uint32_t>();
+	this->loopOffset = this->origLoopOffset = file.ReadLE<uint16_t>();
+	this->nonLoopLength = this->origNonLoopLength = file.ReadLE<uint32_t>();
 	uint32_t size = (this->loopOffset + this->nonLoopLength) * 4;
-	auto origData = std::vector<uint8_t>(size);
-	file.ReadLE(origData);
+	this->origData.resize(size);
+	file.ReadLE(this->origData);
 
 	// Convert data accordingly
 	if (!this->waveType)
 	{
 		// PCM 8-bit -> PCM signed 16-bit
-		this->data.resize(origData.size(), 0);
-		for (size_t i = 0, len = origData.size(); i < len; ++i)
-			this->data[i] = origData[i] << 8;
+		this->data.resize(size, 0);
+		for (size_t i = 0; i < size; ++i)
+			this->data[i] = this->origData[i] << 8;
 		this->loopOffset *= 4;
 		this->nonLoopLength *= 4;
 	}
 	else if (this->waveType == 1)
 	{
 		// PCM signed 16-bit, no conversion
-		this->data.resize(origData.size() / 2, 0);
-		for (size_t i = 0, len = origData.size() / 2; i < len; ++i)
-			this->data[i] = ReadLE<int16_t>(&origData[2 * i]);
+		this->data.resize(size / 2, 0);
+		for (size_t i = 0; i < size / 2; ++i)
+			this->data[i] = ReadLE<int16_t>(&this->origData[2 * i]);
 		this->loopOffset *= 2;
 		this->nonLoopLength *= 2;
 	}
 	else if (this->waveType == 2)
 	{
 		// IMA ADPCM -> PCM signed 16-bit
-		this->data.resize((origData.size() - 4) * 2, 0);
-		this->DecodeADPCM(&origData[0], origData.size() - 4);
-		--this->loopOffset;
+		this->data.resize((size - 4) * 2, 0);
+		this->DecodeADPCM(size - 4);
+		if (this->loopOffset)
+			--this->loopOffset;
 		this->loopOffset *= 8;
 		this->nonLoopLength *= 8;
 	}
+}
+
+uint32_t SWAV::Size() const
+{
+	return this->origData.size() + 12;
+}
+
+void SWAV::Write(PseudoWrite &file) const
+{
+	file.WriteLE(this->waveType);
+	file.WriteLE(this->loop);
+	file.WriteLE(this->sampleRate);
+	file.WriteLE(this->time);
+	file.WriteLE(this->origLoopOffset);
+	file.WriteLE(this->origNonLoopLength);
+	file.WriteLE(this->origData);
 }

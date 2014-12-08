@@ -1,7 +1,7 @@
 /*
  * SSEQ Player - SDAT SBNK (Sound Bank) structures
  * By Naram Qashat (CyberBotX)
- * Last modification on 2014-11-12
+ * Last modification on 2014-12-08
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
@@ -107,9 +107,9 @@ uint32_t SBNKInstrument::Size() const
 		return 4;
 }
 
-uint16_t SBNKInstrument::FixOffset(uint16_t offset)
+uint16_t SBNKInstrument::FixOffset(uint16_t newOffset)
 {
-	this->offset = offset;
+	this->offset = newOffset;
 	return this->Size() - 4;
 }
 
@@ -158,7 +158,7 @@ void SBNKInstrument::WriteData(PseudoWrite &file) const
 	}
 }
 
-SBNK::SBNK(const std::string &fn) : filename(fn), instruments(), entryNumber(-1), info()
+SBNK::SBNK(const std::string &fn) : filename(fn), header(), count(0), instruments(), entryNumber(-1)
 {
 }
 

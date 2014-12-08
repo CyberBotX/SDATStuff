@@ -1,7 +1,7 @@
 /*
  * SDAT - Timer Track structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-11-12
+ * Last modification on 2014-12-08
  *
  * Adapted from source code of FeOS Sound System
  * By fincs
@@ -173,7 +173,7 @@ int TimerTrack::NoteOn(int key, int vel, int len)
 			return -1;
 		chn = &this->ply->channels[nCh];
 
-		auto swav = &this->ply->swar[noteDef->swar]->swavs.find(noteDef->swav)->second;
+		const auto swav = this->ply->swar[noteDef->swar]->swavs.find(noteDef->swav)->second.get();
 		chn->tempReg.CR = SOUND_FORMAT(swav->waveType & 3) | SOUND_LOOP(!!swav->loop) | SCHANNEL_ENABLE;
 		chn->tempReg.SOURCE = swav;
 		chn->tempReg.TIMER = swav->time;
@@ -817,7 +817,7 @@ std::pair<std::vector<uint16_t>, std::vector<uint32_t>> TimerTrack::GetPatches(c
 	std::vector<uint16_t> patches;
 	std::vector<uint32_t> positions;
 
-	PseudoReadFile file(sseq->info.origFilename);
+	PseudoReadFile file;
 	file.GetDataFromVector(sseq->data.begin(), sseq->data.end());
 
 	uint32_t dataSize = sseq->data.size();

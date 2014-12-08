@@ -1,7 +1,7 @@
 /*
  * SDAT to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-11-12
+ * Last modification on 2014-12-08
  *
  * NOTE: This version has been superceded by NDS to NCSF instead.  It also lacks
  *       some of the features that are in NDS to NCSF.
@@ -12,11 +12,12 @@
  *                     - Added options to change the fade times.
  *   v1.2 - 2014-10-15 - Improved timing system by implementing the random,
  *                       variable, and conditional SSEQ commands.
+ *   v1.3 - 2014-12-08 - Minor cleanup of PseudoReadFile to not use a pointer.
  */
 
 #include "NCSF.h"
 
-static const std::string SDATTONCSF_VERSION = "1.2";
+static const std::string SDATTONCSF_VERSION = "1.3";
 
 enum { UNKNOWN, HELP, VERBOSE, TIME, FADELOOP, FADEONESHOT };
 const option::Descriptor opts[] =

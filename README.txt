@@ -12,10 +12,12 @@ v1.0 - 2013-03-30 - Initial Version
 v1.1 - 2012-03-30 - Added option to rename the NCSFs, requested by Knurek.
 v1.2 - 2012-04-10 - Made it so a file is not overwritten when renaming if
                     a duplicate is found.
+v1.3 - 2012-12-08 - Minor cleanup of PseudoReadFile to not use a pointer.
 
 2SF to NCSF Version History
 ---------------------------
 v1.0 - 2014-10-29 - Initial Version
+v1.1 - 2012-12-08 - Minor cleanup of PseudoReadFile to not use a pointer.
 
 NDS to NCSF Version History
 ---------------------------
@@ -41,6 +43,9 @@ v1.5 - 2014-10-26 - Save the PLAYER blocks in the SDATs as opposed to
                     SSEQs found.
 v1.6 - 2014-11-07 - Added functionality for an SMAP-like file to be used
                     to include/exclude SSEQs.
+v1.7 - 2014-12-08 - Added functionality to strip the SBNKs and SWARs of
+                    the SDAT prior to saving it.
+                  - Minor cleanup of PseudoReadFile to not use a pointer.
 
 SDAT Strip Version History
 --------------------------
@@ -58,18 +63,19 @@ v1.1 - 2013-03-28 - Made timing to be on by default, with 2 loops.
                   - Added options to change the fade times.
 v1.2 - 2014-10-15 - Improved timing system by implementing the random,
                     variable, and conditional SSEQ commands.
+v1.3 - 2014-12-08 - Minor cleanup of PseudoReadFile to not use a pointer.
 
 These utilities are used to work with SDAT files from Nintendo DS ROMs. SDATs are
 created through the Nintendo Nitro/TWL SDK for the DS. NCSF is a PSF-style music format
 that uses the SDAT as it's "program".
 
 Contains:
-* 2SF Tags to NCSF v1.2 - A utility to copy tags from a 2SF set into an NCSF set.
-*      2SF to NCSF v1.0 - A utility to take a 2SF set and create an NCSF set out of it.
-*      NDS to NCSF v1.6 - A utility to take a Nintendo DS ROM and create an NCSF set out of it.
+* 2SF Tags to NCSF v1.3 - A utility to copy tags from a 2SF set into an NCSF set.
+*      2SF to NCSF v1.1 - A utility to take a 2SF set and create an NCSF set out of it.
+*      NDS to NCSF v1.7 - A utility to take a Nintendo DS ROM and create an NCSF set out of it.
 *       SDAT Strip v1.2 - A utility to take an SDAT and strip it of all unneccesary items.
                           (NOTE: Superceded by NDS to NCSF.)
-*     SDAT to NCSF v1.2 - A utility to take an SDAT and create an NCSF out of it.
+*     SDAT to NCSF v1.3 - A utility to take an SDAT and create an NCSF out of it.
                           (NOTE: Superceded by NDS to NCSF.)
 *       zlib DLL v1.2.8 - Required by 2SF Tags to NCSF, 2SF to NCSF, NDS to NCSF, and SDAT to NCSF.
 

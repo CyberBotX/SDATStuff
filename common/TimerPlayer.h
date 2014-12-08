@@ -1,7 +1,7 @@
 /*
  * SDAT - Timer Player structure
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-10-23
+ * Last modification on 2014-12-08
  *
  * Adapted from source code of FeOS Sound System
  * By fincs
@@ -84,7 +84,7 @@ struct TimerPlayer
 	}
 #endif
 
-	void Setup(const SSEQ *sseqToPlay);
+	void Setup(const SSEQ *sseqToPlay, const std::string &filename);
 	int ChannelAlloc(int type, int priority);
 	void Run();
 	void UpdateTracks();

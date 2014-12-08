@@ -1,7 +1,7 @@
 /*
  * SDAT - SWAV (Waveform/Sample) structure
  * By Naram Qashat (CyberBotX)
- * Last modification on 2014-10-15
+ * Last modification on 2014-12-08
  *
  * Nintendo DS Nitro Composer (SDAT) Specification document found at
  * http://www.feshrine.net/hacking/doc/nds-sdat.html
@@ -17,12 +17,17 @@ struct SWAV
 	uint8_t loop;
 	uint16_t sampleRate;
 	uint16_t time;
+	uint16_t origLoopOffset;
 	uint32_t loopOffset;
+	uint32_t origNonLoopLength;
 	uint32_t nonLoopLength;
+	std::vector<uint8_t> origData;
 	std::vector<int16_t> data;
 
 	SWAV();
 
 	void Read(PseudoReadFile &file);
-	void DecodeADPCM(const uint8_t *origData, uint32_t len);
+	void DecodeADPCM(uint32_t len);
+	uint32_t Size() const;
+	void Write(PseudoWrite &file) const;
 };

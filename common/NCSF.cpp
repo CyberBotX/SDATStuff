@@ -1,7 +1,7 @@
 /*
  * Common NCSF functions
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-11-12
+ * Last modification on 2014-12-08
  */
 
 #include <fstream>
@@ -355,8 +355,9 @@ static inline int Cnv_Scale(int scale)
 // After which, it will store the data in the tags for the SSEQ.
 void GetTime(const std::string &filename, const SDAT *sdat, const SSEQ *sseq, TagList &tags, bool verbose, uint32_t numberOfLoops, uint32_t fadeLoop, uint32_t fadeOneShot)
 {
+	const auto &info = sdat->infoSection.SEQrecord.entries[sseq->entryNumber];
 	auto player = std::unique_ptr<TimerPlayer>(new TimerPlayer());
-	player->Setup(sseq);
+	player->Setup(sseq, info.origFilename);
 	player->maxSeconds = 6000;
 	// Get the time, without "playing" the notes
 	Time length = GetTime(player.get(), 20, numberOfLoops);
@@ -365,12 +366,13 @@ void GetTime(const std::string &filename, const SDAT *sdat, const SSEQ *sseq, Ta
 	if (static_cast<int>(length.time) != -1 && length.type == END)
 	{
 		player.reset(new TimerPlayer());
-		player->sseqVol = Cnv_Scale(sseq->info.vol);
-		player->Setup(sseq);
-		player->sbnk = sdat->infoSection.BANKrecord.entries[sseq->info.bank].sbnk;
+		player->sseqVol = Cnv_Scale(info.vol);
+		player->Setup(sseq, info.origFilename);
+		const auto &sbnkInfo = sdat->infoSection.BANKrecord.entries[info.bank];
+		player->sbnk = sbnkInfo.sbnk;
 		for (int i = 0; i < 4; ++i)
-			if (player->sbnk->info.waveArc[i] != 0xFFFF)
-				player->swar[i] = sdat->infoSection.WAVEARCrecord.entries[player->sbnk->info.waveArc[i]].swar;
+			if (sbnkInfo.waveArc[i] != 0xFFFF)
+				player->swar[i] = sdat->infoSection.WAVEARCrecord.entries[sbnkInfo.waveArc[i]].swar;
 		player->maxSeconds = length.time + 30;
 		player->doNotes = true;
 		Time oldLength = length;

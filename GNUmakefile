@@ -2,15 +2,14 @@ UNAME:=	$(shell uname -s)
 
 SRCDIR:=	$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
-COMMON_SRCS=	SDAT.cpp NDSStdHeader.cpp SYMBSection.cpp INFOSection.cpp INFOEntry.cpp FATSection.cpp SSEQ.cpp SWAV.cpp SWAR.cpp SBNK.cpp
+COMMON_SRCS=	SDAT.cpp NDSStdHeader.cpp SYMBSection.cpp INFOSection.cpp INFOEntry.cpp FATSection.cpp SSEQ.cpp SWAV.cpp SWAR.cpp SBNK.cpp TimerChannel.cpp TimerPlayer.cpp TimerTrack.cpp
 COMMON_SRCS:=	$(sort $(addprefix $(SRCDIR)common/,$(COMMON_SRCS)))
-TIMER_SRCS:=	$(wildcard $(SRCDIR)common/Timer*.cpp)
 
-SDATtoNCSF_SRCS:=	$(SRCDIR)SDATtoNCSF/SDATtoNCSF.cpp $(SRCDIR)common/TagList.cpp $(SRCDIR)common/NCSF.cpp $(TIMER_SRCS) $(COMMON_SRCS)
+SDATtoNCSF_SRCS:=	$(SRCDIR)SDATtoNCSF/SDATtoNCSF.cpp $(SRCDIR)common/TagList.cpp $(SRCDIR)common/NCSF.cpp $(COMMON_SRCS)
 SDATStrip_SRCS:=	$(SRCDIR)SDATStrip/SDATStrip.cpp $(COMMON_SRCS)
-NDStoNCSF_SRCS:=	$(SRCDIR)NDStoNCSF/NDStoNCSF.cpp $(SRCDIR)common/TagList.cpp $(SRCDIR)common/NCSF.cpp $(TIMER_SRCS) $(COMMON_SRCS)
-2SFTagsToNCSF_SRCS:=	$(SRCDIR)2SFTagsToNCSF/2SFTagsToNCSF.cpp $(SRCDIR)common/TagList.cpp $(SRCDIR)common/NCSF.cpp $(TIMER_SRCS) $(COMMON_SRCS)
-2SFtoNCSF_SRCS:=	$(SRCDIR)2SFtoNCSF/2SFtoNCSF.cpp $(SRCDIR)common/TagList.cpp $(SRCDIR)common/NCSF.cpp $(TIMER_SRCS) $(COMMON_SRCS)
+NDStoNCSF_SRCS:=	$(SRCDIR)NDStoNCSF/NDStoNCSF.cpp $(SRCDIR)common/TagList.cpp $(SRCDIR)common/NCSF.cpp $(COMMON_SRCS)
+2SFTagsToNCSF_SRCS:=	$(SRCDIR)2SFTagsToNCSF/2SFTagsToNCSF.cpp $(SRCDIR)common/TagList.cpp $(SRCDIR)common/NCSF.cpp $(COMMON_SRCS)
+2SFtoNCSF_SRCS:=	$(SRCDIR)2SFtoNCSF/2SFtoNCSF.cpp $(SRCDIR)common/TagList.cpp $(SRCDIR)common/NCSF.cpp $(COMMON_SRCS)
 
 PROGS=	SDATtoNCSF/SDATtoNCSF SDATStrip/SDATStrip NDStoNCSF/NDStoNCSF 2SFTagsToNCSF/2SFTagsToNCSF 2SFtoNCSF/2SFtoNCSF
 PROGS:=	$(sort $(PROGS))
