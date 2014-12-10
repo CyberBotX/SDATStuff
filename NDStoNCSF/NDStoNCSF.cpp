@@ -1,7 +1,7 @@
 /*
  * NDS to NCSF
  * By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
- * Last modification on 2014-12-08
+ * Last modification on 2014-12-09
  *
  * Version history:
  *   v1.0 - 2013-03-25 - Initial version
@@ -26,13 +26,14 @@
  *                       SSEQs found.
  *   v1.6 - 2014-11-07 - Added functionality for an SMAP-like file to be used
  *                       to include/exclude SSEQs.
- *   v1.7 - 2014-12-08 - Added functionality to strip the SBNKs and SWARs of
+ *   v1.7 - 2014-12-09 - Added functionality to strip the SBNKs and SWARs of
  *                       the SDAT prior to saving it.
  *                     - Minor cleanup of PseudoReadFile to not use a pointer.
  */
 
 #include <iomanip>
 #include "NCSF.h"
+#include "TimerTrack.h"
 
 static const std::string NDSTONCSF_VERSION = "1.7";
 
@@ -79,6 +80,45 @@ const option::Descriptor opts[] =
 		"\n\nTiming uses code based on FeOS Sound System by fincs, as well as code from DeSmuME for pseudo-playback."),
 	option::Descriptor()
 };
+
+// This will compare the data of 2 SSEQs, ignoring the value of patches as those may have been changed from the originals.
+static bool CompareSSEQData(const std::vector<uint8_t> &dataA, const std::vector<uint8_t> &dataB)
+{
+	auto patchesA = TimerTrack::GetPatches(dataA), patchesB = TimerTrack::GetPatches(dataB);
+	size_t patchCount = patchesA.first.size();
+	// If the number of patches used doesn't match, then the data doesn't match
+	if (patchesB.first.size() != patchCount)
+		return false;
+	uint32_t lastPosA = 0, lastPosB = 0;
+	for (size_t i = 0; i <= patchCount; ++i)
+	{
+		auto endA = dataA.end();
+		uint32_t nextPosA, nextPosB;
+		if (i == patchCount)
+		{
+			nextPosA = dataA.size();
+			nextPosB = dataB.size();
+		}
+		else
+		{
+			endA = dataA.begin() + (nextPosA = patchesA.second[i]);
+			nextPosB = patchesB.second[i];
+		}
+		// If the amount of data since the last patch (or from the beginning of the data) doesn't match, then the data doesn't match
+		if (nextPosA - lastPosA != nextPosB - lastPosB)
+			continue;
+		// Check if the actual data since the last patch (or from the beginning of the data) doesn't match
+		if (!std::equal(dataA.begin() + lastPosA, endA, dataB.begin() + lastPosB))
+			continue;
+		if (i == patchCount)
+			break;
+		auto patchA = EncodeVarLen(patchesA.first[i]);
+		auto patchB = EncodeVarLen(patchesB.first[i]);
+		lastPosA = patchesA.second[i] + patchA.size();
+		lastPosB = patchesB.second[i] + patchB.size();
+	}
+	return true;
+}
 
 typedef std::multimap<std::string, SSEQ> OldSDATFilesMap;
 
@@ -385,7 +425,7 @@ int main(int argc, char *argv[])
 						if (exclude)
 						{
 							auto &currData = curr.second.data;
-							if (thisData == currData)
+							if (CompareSSEQData(thisData, currData))
 								exclude = false;
 						}
 					};

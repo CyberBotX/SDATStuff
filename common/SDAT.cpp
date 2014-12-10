@@ -997,22 +997,6 @@ template<typename T> static inline void MergeUniqueVector(const std::vector<T> &
 	dest.erase(last, dest.end());
 }
 
-// Comes from http://techoverflow.net/blog/2013/01/25/efficiently-encoding-variable-length-integers-in-cc/
-// But modified to use a vector instead
-template<typename T> static inline std::vector<uint8_t> EncodeVarLen(T value)
-{
-	std::vector<uint8_t> output;
-	// While more than 7 bits of data are left, occupy the last output byte and set the next byte flag
-	while (value > 127)
-	{
-		output.push_back((value & 0x7F) | 0x80);
-		// Remove the seven bits we just wrote
-		value >>= 7;
-	}
-	output.push_back(value & 0x7F);
-	return output;
-}
-
 typedef std::map<uint16_t, std::vector<uint16_t>> IndexMap;
 typedef std::map<uint16_t, std::map<uint16_t, uint16_t>> MoveMap;
 

@@ -101,6 +101,7 @@ struct TimerTrack
 	void ReleaseAllNotes();
 	void Run();
 	static std::pair<std::vector<uint16_t>, std::vector<uint32_t>> GetPatches(const SSEQ *sseq);
+	static std::pair<std::vector<uint16_t>, std::vector<uint32_t>> GetPatches(const std::vector<uint8_t> &data);
 
 	int Read8();
 	int Read16();

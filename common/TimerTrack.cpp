@@ -814,13 +814,18 @@ void TimerTrack::Run()
 
 std::pair<std::vector<uint16_t>, std::vector<uint32_t>> TimerTrack::GetPatches(const SSEQ *sseq)
 {
+	return TimerTrack::GetPatches(sseq->data);
+}
+
+std::pair<std::vector<uint16_t>, std::vector<uint32_t>> TimerTrack::GetPatches(const std::vector<uint8_t> &data)
+{
 	std::vector<uint16_t> patches;
 	std::vector<uint32_t> positions;
 
 	PseudoReadFile file;
-	file.GetDataFromVector(sseq->data.begin(), sseq->data.end());
+	file.GetDataFromVector(data.begin(), data.end());
 
-	uint32_t dataSize = sseq->data.size();
+	uint32_t dataSize = data.size();
 
 	uint8_t tracks = 1;
 	uint8_t finishedTracks = 0;

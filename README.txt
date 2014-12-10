@@ -43,7 +43,7 @@ v1.5 - 2014-10-26 - Save the PLAYER blocks in the SDATs as opposed to
                     SSEQs found.
 v1.6 - 2014-11-07 - Added functionality for an SMAP-like file to be used
                     to include/exclude SSEQs.
-v1.7 - 2014-12-08 - Added functionality to strip the SBNKs and SWARs of
+v1.7 - 2014-12-09 - Added functionality to strip the SBNKs and SWARs of
                     the SDAT prior to saving it.
                   - Minor cleanup of PseudoReadFile to not use a pointer.
 

@@ -598,6 +598,22 @@ inline std::string SecondsToString(double seconds)
 	return time;
 }
 
+// Comes from http://techoverflow.net/blog/2013/01/25/efficiently-encoding-variable-length-integers-in-cc/
+// But modified to use a vector instead
+template<typename T> inline std::vector<uint8_t> EncodeVarLen(T value)
+{
+	std::vector<uint8_t> output;
+	// While more than 7 bits of data are left, occupy the last output byte and set the next byte flag
+	while (value > 127)
+	{
+		output.push_back((value & 0x7F) | 0x80);
+		// Remove the seven bits we just wrote
+		value >>= 7;
+	}
+	output.push_back(value & 0x7F);
+	return output;
+}
+
 // The following functions are for the options parser
 
 inline option::ArgStatus RequireArgument(const option::Option &opt, bool msg)
