@@ -829,6 +829,7 @@ std::pair<std::vector<uint16_t>, std::vector<uint32_t>> TimerTrack::GetPatches(c
 
 	uint8_t tracks = 1;
 	uint8_t finishedTracks = 0;
+	bool usePatch0 = false;
 	while (file.pos < dataSize)
 	{
 		int cmd = file.ReadLE<uint8_t>();
@@ -848,6 +849,8 @@ std::pair<std::vector<uint16_t>, std::vector<uint32_t>> TimerTrack::GetPatches(c
 			default:
 			{
 				uint8_t cmdBytes = SseqCommandByteCount(cmd);
+				if (!finishedTracks && cmd < 0x80 && patches.empty())
+					usePatch0 = true;
 				bool variableBytes = !!(cmdBytes & VariableByteCount);
 				bool extraByte = !!(cmdBytes & ExtraByteOnNoteOrVarOrCmp);
 				cmdBytes &= ~(VariableByteCount | ExtraByteOnNoteOrVarOrCmp);
@@ -866,6 +869,11 @@ std::pair<std::vector<uint16_t>, std::vector<uint32_t>> TimerTrack::GetPatches(c
 			break;
 	}
 
+	if (usePatch0)
+	{
+		patches.push_back(0);
+		positions.push_back(-1);
+	}
 	return std::make_pair(patches, positions);
 }
 

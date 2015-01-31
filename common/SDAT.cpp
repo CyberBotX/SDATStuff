@@ -1146,6 +1146,8 @@ void SDAT::StripBanksAndWaveArcs()
 		const auto &positions = PatchPositions[i];
 		for (size_t j = 0, num = positions.size(); j < num; ++j)
 		{
+			if (positions[j] == -1)
+				continue;
 			file.pos = positions[j] + offset;
 			int oldPatch = file.ReadVL();
 			if (!BankPatchMove.count(oldPatch))
