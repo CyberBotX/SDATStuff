@@ -1066,7 +1066,8 @@ void SDAT::StripBanksAndWaveArcs()
 				entry.waveArc[j] = 0xFFFF;
 		std::for_each(BankWaves.begin(), BankWaves.end(), [&](const IndexMap::value_type &BankWave)
 		{
-			MergeUniqueVector(BankWave.second, WaveArcs[entry.waveArc[BankWave.first]]);
+			if (entry.waveArc[BankWave.first] != 0xFFFF)
+				MergeUniqueVector(BankWave.second, WaveArcs[entry.waveArc[BankWave.first]]);
 		});
 	}
 
