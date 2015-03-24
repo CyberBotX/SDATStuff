@@ -830,43 +830,52 @@ std::pair<std::vector<uint16_t>, std::vector<uint32_t>> TimerTrack::GetPatches(c
 	uint8_t tracks = 1;
 	uint8_t finishedTracks = 0;
 	bool usePatch0 = false;
-	while (file.pos < dataSize)
+	try
 	{
-		int cmd = file.ReadLE<uint8_t>();
-		switch (cmd)
+		while (file.pos < dataSize)
 		{
-			case SSEQ_CMD_OPENTRACK:
-				file.pos += 4;
-				++tracks;
-				break;
-			case SSEQ_CMD_PATCH:
-				positions.push_back(file.pos);
-				patches.push_back(file.ReadVL());
-				break;
-			case SSEQ_CMD_END:
-				++finishedTracks;
-				break;
-			default:
+			int cmd = file.ReadLE<uint8_t>();
+			switch (cmd)
 			{
-				uint8_t cmdBytes = SseqCommandByteCount(cmd);
-				if (!finishedTracks && cmd < 0x80 && patches.empty())
-					usePatch0 = true;
-				bool variableBytes = !!(cmdBytes & VariableByteCount);
-				bool extraByte = !!(cmdBytes & ExtraByteOnNoteOrVarOrCmp);
-				cmdBytes &= ~(VariableByteCount | ExtraByteOnNoteOrVarOrCmp);
-				if (extraByte)
+				case SSEQ_CMD_OPENTRACK:
+					file.pos += 4;
+					++tracks;
+					break;
+				case SSEQ_CMD_PATCH:
+					positions.push_back(file.pos);
+					patches.push_back(file.ReadVL());
+					break;
+				case SSEQ_CMD_END:
+					++finishedTracks;
+					break;
+				default:
 				{
-					int extraCmd = file.ReadLE<uint8_t>();
-					if ((extraCmd >= SSEQ_CMD_SETVAR && extraCmd <= SSEQ_CMD_CMP_NE) || extraCmd < 0x80)
-						++cmdBytes;
+					uint8_t cmdBytes = SseqCommandByteCount(cmd);
+					if (!finishedTracks && cmd < 0x80 && patches.empty())
+						usePatch0 = true;
+					bool variableBytes = !!(cmdBytes & VariableByteCount);
+					bool extraByte = !!(cmdBytes & ExtraByteOnNoteOrVarOrCmp);
+					cmdBytes &= ~(VariableByteCount | ExtraByteOnNoteOrVarOrCmp);
+					if (extraByte)
+					{
+						int extraCmd = file.ReadLE<uint8_t>();
+						if ((extraCmd >= SSEQ_CMD_SETVAR && extraCmd <= SSEQ_CMD_CMP_NE) || extraCmd < 0x80)
+							++cmdBytes;
+					}
+					file.pos += cmdBytes;
+					if (variableBytes)
+						file.ReadVL();
 				}
-				file.pos += cmdBytes;
-				if (variableBytes)
-					file.ReadVL();
 			}
+			if (finishedTracks == tracks)
+				break;
 		}
-		if (finishedTracks == tracks)
-			break;
+	}
+	/* This catch is here so we can still get the patches even if there is a failure in reading the sequence,
+	 * such as badly writtten sequences with an incorrect number of tracks and/or extra bytes after the end
+	 * of the last actual track. */
+	catch (const std::exception &)
+	{
 	}
 
 	if (usePatch0)
