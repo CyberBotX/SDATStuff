@@ -1,3 +1,6 @@
+PLEASE NOTE: This entire repository is outdated, please use the tools at
+https://github.com/CyberBotX/NCSF instead.
+
 NCSF/SDAT Utilities
 By Naram Qashat (CyberBotX) [cyberbotx@cyberbotx.com]
 
@@ -121,3 +124,4 @@ and the new return value syntax. For GCC, version 4.6 and later will work. For
 Clang, nearly any version will work. You will also need the GNU version of Make.
 This will usually be installed as either "make" or "gmake" depending. To build
 the utilities, simply run "make" or "gmake" from this directory.
+
